@@ -9,10 +9,18 @@ use crate::{
     rt_api::{Presence, Socket, SocketEvent},
 };
 
-use nanoserde::DeJson;
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use crate::api::{
+    ApiDeleteStorageObjectId, ApiDeleteStorageObjectsRequest, ApiReadStorageObjectId,
+    ApiReadStorageObjectsRequest, ApiStorageObject, ApiWriteStorageObject,
+    ApiWriteStorageObjectsRequest,
+};
+use crate::api_gen::ApiSession;
+use crate::async_client::{AsyncRequest, Error};
 use crate::matchmaker::Matchmaker;
-use crate::api::{ApiWriteStorageObjectsRequest, ApiStorageObject, ApiWriteStorageObject, ApiReadStorageObjectsRequest, ApiReadStorageObjectId, ApiDeleteStorageObjectsRequest, ApiDeleteStorageObjectId};
+use nanoserde::DeJson;
+use quad_net::http_request::HttpError;
+use std::sync::mpsc::channel;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub enum Event {
     Presence {
@@ -127,6 +135,38 @@ impl ApiClient {
 
     pub fn in_progress(&self) -> bool {
         self.ongoing_request.is_some() || self.state.borrow().next_request.is_some()
+    }
+
+    pub async fn authenticate_async(
+        &mut self,
+        email: &str,
+        password: &str,
+    ) -> Result<ApiSession, Error> {
+        self.session_id = None;
+        self.state.borrow_mut().socket = None;
+        self.state.borrow_mut().username = None;
+
+        let request = api::authenticate_email(
+            &self.key,
+            "",
+            api::ApiAccountEmail {
+                email: email.to_owned(),
+                password: password.to_owned(),
+                vars: std::collections::HashMap::new(),
+            },
+            Some(false),
+            None,
+        );
+
+        let state = self.state.borrow_mut();
+        let server_url = state.server_url.as_ref();
+        let port = state.port;
+
+        let mut req = crate::async_client::make_request(server_url, port, request);
+        let response = req.request.await;
+        response
+            .map_err(|err| err.into())
+            .and_then(|resp| nanoserde::DeJson::deserialize_json(&resp).map_err(|err| err.into()))
     }
 
     pub fn authenticate(&mut self, email: &str, password: &str) {
@@ -375,10 +415,7 @@ impl ApiClient {
         self.state.borrow().rpc_response.clone()
     }
 
-    pub fn socket_add_matchmaker(
-        &mut self,
-        matchmaker: &Matchmaker,
-    ) {
+    pub fn socket_add_matchmaker(&mut self, matchmaker: &Matchmaker) {
         let mut state = &mut *self.state.borrow_mut();
 
         self.matchmaker_token = None;
@@ -450,21 +487,36 @@ impl ApiClient {
     }
 
     pub fn get_storage_object(&self, collection: &str, key: &str) -> Option<Rc<ApiStorageObject>> {
-        Some(self.state.borrow().collections.get(collection)?
-            .get(key)?.clone())
+        Some(
+            self.state
+                .borrow()
+                .collections
+                .get(collection)?
+                .get(key)?
+                .clone(),
+        )
     }
 
     pub fn get_num_storage_objects(&self, collection: &str) -> Option<usize> {
-        self.state.borrow().collections.get(collection)
+        self.state
+            .borrow()
+            .collections
+            .get(collection)
             .map(|objects| objects.len())
     }
 
     pub fn delete_storage_object(&mut self, collection: &str, key: &str) {
-        let old_version = self.state.borrow().collections.get(collection)
-            .map_or(None, |objects| objects.get(key).map(|object| object.clone()));
+        let old_version = self
+            .state
+            .borrow()
+            .collections
+            .get(collection)
+            .map_or(None, |objects| {
+                objects.get(key).map(|object| object.clone())
+            });
 
         if let None = old_version {
-            return
+            return;
         }
 
         let id = ApiDeleteStorageObjectId {
@@ -474,28 +526,24 @@ impl ApiClient {
         };
 
         let body = ApiDeleteStorageObjectsRequest {
-            object_ids: vec![
-                id
-            ]
+            object_ids: vec![id],
         };
 
-        let request = api::delete_storage_objects(
-            self.state.borrow().token.as_ref().unwrap(),
-            body,
-        );
+        let request =
+            api::delete_storage_objects(self.state.borrow().token.as_ref().unwrap(), body);
 
-        self.state
-            .borrow_mut()
-            .make_request(request, {
-                let state2 = self.state.clone();
-                let collection = collection.to_owned();
-                let key = key.to_owned();
-                move |()| {
-                    state2.borrow_mut()
-                        .collections.get_mut(&collection)
-                        .map(|objects| objects.remove(&key));
-                }
-            })
+        self.state.borrow_mut().make_request(request, {
+            let state2 = self.state.clone();
+            let collection = collection.to_owned();
+            let key = key.to_owned();
+            move |()| {
+                state2
+                    .borrow_mut()
+                    .collections
+                    .get_mut(&collection)
+                    .map(|objects| objects.remove(&key));
+            }
+        })
     }
 
     pub fn list_storage_objects(&mut self, collection: &str) {
@@ -507,30 +555,31 @@ impl ApiClient {
             None,
         );
 
-        self.state
-            .borrow_mut()
-            .make_request(request, {
-                let state2 = self.state.clone();
-                move |response|
-                    {
-                        for object in response.objects.iter() {
-                            let mut s = state2.borrow_mut();
-                            s.collections.entry(object.collection.clone())
-                                .or_insert(HashMap::new())
-                                .insert(object.key.clone(), Rc::new(ApiStorageObject {
-                                    key: object.key.clone(),
-                                    collection: object.collection.clone(),
-                                    version: object.version.clone(),
-                                    user_id: object.user_id.clone(),
-                                    create_time: object.create_time.clone(),
-                                    update_time: object.update_time.clone(),
-                                    permission_write: object.permission_write,
-                                    permission_read: object.permission_read,
-                                    value: object.value.clone(),
-                                }));
-                        }
-                    }
-            });
+        self.state.borrow_mut().make_request(request, {
+            let state2 = self.state.clone();
+            move |response| {
+                for object in response.objects.iter() {
+                    let mut s = state2.borrow_mut();
+                    s.collections
+                        .entry(object.collection.clone())
+                        .or_insert(HashMap::new())
+                        .insert(
+                            object.key.clone(),
+                            Rc::new(ApiStorageObject {
+                                key: object.key.clone(),
+                                collection: object.collection.clone(),
+                                version: object.version.clone(),
+                                user_id: object.user_id.clone(),
+                                create_time: object.create_time.clone(),
+                                update_time: object.update_time.clone(),
+                                permission_write: object.permission_write,
+                                permission_read: object.permission_read,
+                                value: object.value.clone(),
+                            }),
+                        );
+                }
+            }
+        });
     }
 
     pub fn fetch_storage_object(&mut self, collection: &str, key: &str) {
@@ -543,36 +592,35 @@ impl ApiClient {
         };
 
         let body = ApiReadStorageObjectsRequest {
-            object_ids: vec![
-               object,
-            ]
+            object_ids: vec![object],
         };
         let request = api::read_storage_objects(self.state.borrow().token.as_ref().unwrap(), body);
 
-        self.state
-            .borrow_mut()
-            .make_request(request, {
-                let state2 = self.state.clone();
-                move |response|
-                    {
-                        for object in response.objects.iter() {
-                            let mut s = state2.borrow_mut();
-                            s.collections.entry(object.collection.clone())
-                                .or_insert(HashMap::new())
-                                .insert(object.key.clone(), Rc::new(ApiStorageObject {
-                                    key: object.key.clone(),
-                                    collection: object.collection.clone(),
-                                    version: object.version.clone(),
-                                    user_id: object.user_id.clone(),
-                                    create_time: object.create_time.clone(),
-                                    update_time: object.update_time.clone(),
-                                    permission_write: object.permission_write,
-                                    permission_read: object.permission_read,
-                                    value: object.value.clone(),
-                                }));
-                        }
-                    }
-            });
+        self.state.borrow_mut().make_request(request, {
+            let state2 = self.state.clone();
+            move |response| {
+                for object in response.objects.iter() {
+                    let mut s = state2.borrow_mut();
+                    s.collections
+                        .entry(object.collection.clone())
+                        .or_insert(HashMap::new())
+                        .insert(
+                            object.key.clone(),
+                            Rc::new(ApiStorageObject {
+                                key: object.key.clone(),
+                                collection: object.collection.clone(),
+                                version: object.version.clone(),
+                                user_id: object.user_id.clone(),
+                                create_time: object.create_time.clone(),
+                                update_time: object.update_time.clone(),
+                                permission_write: object.permission_write,
+                                permission_read: object.permission_read,
+                                value: object.value.clone(),
+                            }),
+                        );
+                }
+            }
+        });
     }
 
     pub fn create_storage_object(&mut self, collection: &str, key: &str, value: &str) {
@@ -580,11 +628,17 @@ impl ApiClient {
     }
 
     pub fn write_storage_object(&mut self, collection: &str, key: &str, value: &str) {
-        let old_version = self.state.borrow().collections.get(collection)
-            .map_or(None, |objects| objects.get(key).map(|object| object.clone()));
+        let old_version = self
+            .state
+            .borrow()
+            .collections
+            .get(collection)
+            .map_or(None, |objects| {
+                objects.get(key).map(|object| object.clone())
+            });
         match old_version {
             Some(object) => self._write_storage_object(collection, key, value, &object.version),
-            None => self._write_storage_object(collection, key, value, "*")
+            None => self._write_storage_object(collection, key, value, "*"),
         }
     }
 
@@ -599,7 +653,7 @@ impl ApiClient {
             version: version.to_owned(),
         };
         let body = ApiWriteStorageObjectsRequest {
-            objects: vec![object.clone()]
+            objects: vec![object.clone()],
         };
 
         let request = api::write_storage_objects(self.state.borrow().token.as_ref().unwrap(), body);
@@ -607,38 +661,42 @@ impl ApiClient {
         let collection = object.collection.clone();
         let key = object.key.clone();
 
-        self.state.borrow_mut().pending_objects.entry(collection)
+        self.state
+            .borrow_mut()
+            .pending_objects
+            .entry(collection)
             .or_insert(HashMap::new())
             .insert(key, object);
 
-        self.state
-            .borrow_mut()
-            .make_request(request, {
-                let state2 = self.state.clone();
-                move |response|
-                    {
-                        for ack in response.acks.iter() {
-                            let mut s = state2.borrow_mut();
-                            if let Some(pending_object) = s.pending_objects.get_mut(&ack.collection) {
-                                let acked = pending_object.remove(&ack.key);
-                                if let Some(write_object) = acked {
-                                    s.collections.entry(ack.collection.clone())
-                                        .or_insert(HashMap::new())
-                                        .insert(ack.key.clone(), Rc::new(ApiStorageObject {
-                                            key: ack.key.clone(),
-                                            collection: ack.collection.clone(),
-                                            version: ack.version.clone(),
-                                            user_id: ack.user_id.clone(),
-                                            create_time: "".to_owned(),
-                                            update_time: "".to_owned(),
-                                            permission_write: write_object.permission_write,
-                                            permission_read: write_object.permission_read,
-                                            value: write_object.value,
-                                        }));
-                                }
-                            }
+        self.state.borrow_mut().make_request(request, {
+            let state2 = self.state.clone();
+            move |response| {
+                for ack in response.acks.iter() {
+                    let mut s = state2.borrow_mut();
+                    if let Some(pending_object) = s.pending_objects.get_mut(&ack.collection) {
+                        let acked = pending_object.remove(&ack.key);
+                        if let Some(write_object) = acked {
+                            s.collections
+                                .entry(ack.collection.clone())
+                                .or_insert(HashMap::new())
+                                .insert(
+                                    ack.key.clone(),
+                                    Rc::new(ApiStorageObject {
+                                        key: ack.key.clone(),
+                                        collection: ack.collection.clone(),
+                                        version: ack.version.clone(),
+                                        user_id: ack.user_id.clone(),
+                                        create_time: "".to_owned(),
+                                        update_time: "".to_owned(),
+                                        permission_write: write_object.permission_write,
+                                        permission_read: write_object.permission_read,
+                                        value: write_object.value,
+                                    }),
+                                );
                         }
                     }
-            })
+                }
+            }
+        })
     }
 }

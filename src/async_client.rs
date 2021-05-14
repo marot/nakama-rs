@@ -1,5 +1,8 @@
 use super::api;
 use quad_net::http_request::{HttpError, Method, Request, RequestBuilder};
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
 #[derive(Debug)]
 pub enum Error {
@@ -28,7 +31,7 @@ impl From<HttpError> for Error {
 
 pub struct AsyncRequest<T: nanoserde::DeJson> {
     _marker: std::marker::PhantomData<T>,
-    request: Request,
+    pub request: Request,
     on_success: Option<Box<dyn FnMut(T) -> ()>>,
     on_error: Option<Box<dyn FnMut(Error) -> ()>>,
 }
