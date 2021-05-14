@@ -4,31 +4,28 @@ use std::collections::HashMap;
 
 use nanoserde::DeJson;
 
-
 #[derive(Debug, Clone)]
 pub enum Authentication {
-  Basic {
-    username: String,
-    password: String
-  },
-  Bearer {
-    token: String
-  }
+    Basic { username: String, password: String },
+    Bearer { token: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Method {
-    Post, Get, Put, Delete
+    Post,
+    Get,
+    Put,
+    Delete,
 }
 
 #[derive(Debug, Clone)]
 pub struct RestRequest<Response> {
-  pub authentication: Authentication,
-  pub urlpath: String,
-  pub query_params: String,
-  pub body: String,
-  pub method: Method,
-  _marker: std::marker::PhantomData<Response>
+    pub authentication: Authentication,
+    pub urlpath: String,
+    pub query_params: String,
+    pub body: String,
+    pub method: Method,
+    pub _marker: std::marker::PhantomData<Response>,
 }
 
 trait ToRestString {
@@ -45,17 +42,16 @@ pub struct GroupUserListGroupUser {
 
 impl ToRestString for GroupUserListGroupUser {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"state\": {}", self.state.to_string()));
-        
+
+        output.push_str(&format!("\"state\": {}", self.state.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"user\": {}", self.user.to_string()));
+        output.push_str(&format!("\"user\": {}", self.user.to_string()));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -69,51 +65,46 @@ pub struct UserGroupListUserGroup {
 
 impl ToRestString for UserGroupListUserGroup {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"group\": {}", self.group.to_string()));
-        
+
+        output.push_str(&format!("\"group\": {}", self.group.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"state\": {}", self.state.to_string()));
+        output.push_str(&format!("\"state\": {}", self.state.to_string()));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
 /// - UNKNOWN: Unknown environment.  - SANDBOX: Sandbox/test environment.  - PRODUCTION: Production environment.
 #[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
-pub struct ValidatedPurchaseEnvironment {
-}
+pub struct ValidatedPurchaseEnvironment {}
 
 impl ToRestString for ValidatedPurchaseEnvironment {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
 /// - APPLE_APP_STORE: Apple App Store  - GOOGLE_PLAY_STORE: Google Play Store  - HUAWEI_APP_GALLERY: Huawei App Gallery
 #[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
-pub struct ValidatedPurchaseStore {
-}
+pub struct ValidatedPurchaseStore {}
 
 impl ToRestString for ValidatedPurchaseStore {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -128,20 +119,19 @@ pub struct WriteLeaderboardRecordRequestLeaderboardRecordWrite {
 
 impl ToRestString for WriteLeaderboardRecordRequestLeaderboardRecordWrite {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-        
+
+        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
+
         output.push_str(",");
-	output.push_str(&format!("\"score\": \"{}\"", self.score));
-        
+        output.push_str(&format!("\"score\": \"{}\"", self.score));
+
         output.push_str(",");
-	output.push_str(&format!("\"subscore\": \"{}\"", self.subscore));
+        output.push_str(&format!("\"subscore\": \"{}\"", self.subscore));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -156,20 +146,19 @@ pub struct WriteTournamentRecordRequestTournamentRecordWrite {
 
 impl ToRestString for WriteTournamentRecordRequestTournamentRecordWrite {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-        
+
+        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
+
         output.push_str(",");
-	output.push_str(&format!("\"score\": \"{}\"", self.score));
-        
+        output.push_str(&format!("\"score\": \"{}\"", self.score));
+
         output.push_str(",");
-	output.push_str(&format!("\"subscore\": \"{}\"", self.subscore));
+        output.push_str(&format!("\"subscore\": \"{}\"", self.subscore));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -188,35 +177,38 @@ pub struct ApiAccount {
 
 impl ToRestString for ApiAccount {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"customId\": \"{}\"", self.custom_id));
-        
+
+        output.push_str(&format!("\"customId\": \"{}\"", self.custom_id));
+
         output.push_str(",");
         output.push_str(&format!("\"devices\": [{}]", {
-            let vec_string = self.devices.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .devices
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
-        
+
         output.push_str(",");
-	output.push_str(&format!("\"disableTime\": \"{}\"", self.disable_time));
-        
+        output.push_str(&format!("\"disableTime\": \"{}\"", self.disable_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"email\": \"{}\"", self.email));
-        
+        output.push_str(&format!("\"email\": \"{}\"", self.email));
+
         output.push_str(",");
-	output.push_str(&format!("\"user\": {}", self.user.to_string()));
-        
+        output.push_str(&format!("\"user\": {}", self.user.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"verifyTime\": \"{}\"", self.verify_time));
-        
+        output.push_str(&format!("\"verifyTime\": \"{}\"", self.verify_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"wallet\": \"{}\"", self.wallet));
+        output.push_str(&format!("\"wallet\": \"{}\"", self.wallet));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -230,24 +222,23 @@ pub struct ApiAccountApple {
 
 impl ToRestString for ApiAccountApple {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"token\": \"{}\"", self.token));
-        
+
+        output.push_str(&format!("\"token\": \"{}\"", self.token));
+
         output.push_str(",");
-  	output.push_str(&format!("\"vars\": {{ {} }}", {
-	    let map_string = self
-		.vars
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
+        output.push_str(&format!("\"vars\": {{ {} }}", {
+            let map_string = self
+                .vars
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -261,24 +252,23 @@ pub struct ApiAccountCustom {
 
 impl ToRestString for ApiAccountCustom {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"id\": \"{}\"", self.id));
-        
+
+        output.push_str(&format!("\"id\": \"{}\"", self.id));
+
         output.push_str(",");
-  	output.push_str(&format!("\"vars\": {{ {} }}", {
-	    let map_string = self
-		.vars
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
+        output.push_str(&format!("\"vars\": {{ {} }}", {
+            let map_string = self
+                .vars
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -292,24 +282,23 @@ pub struct ApiAccountDevice {
 
 impl ToRestString for ApiAccountDevice {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"id\": \"{}\"", self.id));
-        
+
+        output.push_str(&format!("\"id\": \"{}\"", self.id));
+
         output.push_str(",");
-  	output.push_str(&format!("\"vars\": {{ {} }}", {
-	    let map_string = self
-		.vars
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
+        output.push_str(&format!("\"vars\": {{ {} }}", {
+            let map_string = self
+                .vars
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -324,27 +313,26 @@ pub struct ApiAccountEmail {
 
 impl ToRestString for ApiAccountEmail {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"email\": \"{}\"", self.email));
-        
+
+        output.push_str(&format!("\"email\": \"{}\"", self.email));
+
         output.push_str(",");
-	output.push_str(&format!("\"password\": \"{}\"", self.password));
-        
+        output.push_str(&format!("\"password\": \"{}\"", self.password));
+
         output.push_str(",");
-  	output.push_str(&format!("\"vars\": {{ {} }}", {
-	    let map_string = self
-		.vars
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
+        output.push_str(&format!("\"vars\": {{ {} }}", {
+            let map_string = self
+                .vars
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -358,24 +346,23 @@ pub struct ApiAccountFacebook {
 
 impl ToRestString for ApiAccountFacebook {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"token\": \"{}\"", self.token));
-        
+
+        output.push_str(&format!("\"token\": \"{}\"", self.token));
+
         output.push_str(",");
-  	output.push_str(&format!("\"vars\": {{ {} }}", {
-	    let map_string = self
-		.vars
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
+        output.push_str(&format!("\"vars\": {{ {} }}", {
+            let map_string = self
+                .vars
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -389,24 +376,26 @@ pub struct ApiAccountFacebookInstantGame {
 
 impl ToRestString for ApiAccountFacebookInstantGame {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"signedPlayerInfo\": \"{}\"", self.signed_player_info));
-        
+
+        output.push_str(&format!(
+            "\"signedPlayerInfo\": \"{}\"",
+            self.signed_player_info
+        ));
+
         output.push_str(",");
-  	output.push_str(&format!("\"vars\": {{ {} }}", {
-	    let map_string = self
-		.vars
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
+        output.push_str(&format!("\"vars\": {{ {} }}", {
+            let map_string = self
+                .vars
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -425,39 +414,41 @@ pub struct ApiAccountGameCenter {
 
 impl ToRestString for ApiAccountGameCenter {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"bundleId\": \"{}\"", self.bundle_id));
-        
+
+        output.push_str(&format!("\"bundleId\": \"{}\"", self.bundle_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"playerId\": \"{}\"", self.player_id));
-        
+        output.push_str(&format!("\"playerId\": \"{}\"", self.player_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"publicKeyUrl\": \"{}\"", self.public_key_url));
-        
+        output.push_str(&format!("\"publicKeyUrl\": \"{}\"", self.public_key_url));
+
         output.push_str(",");
-	output.push_str(&format!("\"salt\": \"{}\"", self.salt));
-        
+        output.push_str(&format!("\"salt\": \"{}\"", self.salt));
+
         output.push_str(",");
-	output.push_str(&format!("\"signature\": \"{}\"", self.signature));
-        
+        output.push_str(&format!("\"signature\": \"{}\"", self.signature));
+
         output.push_str(",");
-	output.push_str(&format!("\"timestampSeconds\": \"{}\"", self.timestamp_seconds));
-        
+        output.push_str(&format!(
+            "\"timestampSeconds\": \"{}\"",
+            self.timestamp_seconds
+        ));
+
         output.push_str(",");
-  	output.push_str(&format!("\"vars\": {{ {} }}", {
-	    let map_string = self
-		.vars
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
+        output.push_str(&format!("\"vars\": {{ {} }}", {
+            let map_string = self
+                .vars
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -471,24 +462,23 @@ pub struct ApiAccountGoogle {
 
 impl ToRestString for ApiAccountGoogle {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"token\": \"{}\"", self.token));
-        
+
+        output.push_str(&format!("\"token\": \"{}\"", self.token));
+
         output.push_str(",");
-  	output.push_str(&format!("\"vars\": {{ {} }}", {
-	    let map_string = self
-		.vars
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
+        output.push_str(&format!("\"vars\": {{ {} }}", {
+            let map_string = self
+                .vars
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -502,24 +492,23 @@ pub struct ApiAccountSteam {
 
 impl ToRestString for ApiAccountSteam {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"token\": \"{}\"", self.token));
-        
+
+        output.push_str(&format!("\"token\": \"{}\"", self.token));
+
         output.push_str(",");
-  	output.push_str(&format!("\"vars\": {{ {} }}", {
-	    let map_string = self
-		.vars
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
+        output.push_str(&format!("\"vars\": {{ {} }}", {
+            let map_string = self
+                .vars
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -544,50 +533,49 @@ pub struct ApiChannelMessage {
 
 impl ToRestString for ApiChannelMessage {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"channelId\": \"{}\"", self.channel_id));
-        
+
+        output.push_str(&format!("\"channelId\": \"{}\"", self.channel_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"code\": {}", self.code.to_string()));
-        
+        output.push_str(&format!("\"code\": {}", self.code.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"content\": \"{}\"", self.content));
-        
+        output.push_str(&format!("\"content\": \"{}\"", self.content));
+
         output.push_str(",");
-	output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-        
+        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"groupId\": \"{}\"", self.group_id));
-        
+        output.push_str(&format!("\"groupId\": \"{}\"", self.group_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"messageId\": \"{}\"", self.message_id));
-        
+        output.push_str(&format!("\"messageId\": \"{}\"", self.message_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"persistent\": {}", self.persistent.to_string()));
-        
+        output.push_str(&format!("\"persistent\": {}", self.persistent.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"roomName\": \"{}\"", self.room_name));
-        
+        output.push_str(&format!("\"roomName\": \"{}\"", self.room_name));
+
         output.push_str(",");
-	output.push_str(&format!("\"senderId\": \"{}\"", self.sender_id));
-        
+        output.push_str(&format!("\"senderId\": \"{}\"", self.sender_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-        
+        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"userIdOne\": \"{}\"", self.user_id_one));
-        
+        output.push_str(&format!("\"userIdOne\": \"{}\"", self.user_id_one));
+
         output.push_str(",");
-	output.push_str(&format!("\"userIdTwo\": \"{}\"", self.user_id_two));
-        
+        output.push_str(&format!("\"userIdTwo\": \"{}\"", self.user_id_two));
+
         output.push_str(",");
-	output.push_str(&format!("\"username\": \"{}\"", self.username));
+        output.push_str(&format!("\"username\": \"{}\"", self.username));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -603,26 +591,32 @@ pub struct ApiChannelMessageList {
 
 impl ToRestString for ApiChannelMessageList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"cacheableCursor\": \"{}\"", self.cacheable_cursor));
-        
+
+        output.push_str(&format!(
+            "\"cacheableCursor\": \"{}\"",
+            self.cacheable_cursor
+        ));
+
         output.push_str(",");
         output.push_str(&format!("\"messages\": [{}]", {
-            let vec_string = self.messages.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .messages
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
-        
+
         output.push_str(",");
-	output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
-        
+        output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
+
         output.push_str(",");
-	output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
+        output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -640,29 +634,28 @@ pub struct ApiCreateGroupRequest {
 
 impl ToRestString for ApiCreateGroupRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
-        
+
+        output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
+
         output.push_str(",");
-	output.push_str(&format!("\"description\": \"{}\"", self.description));
-        
+        output.push_str(&format!("\"description\": \"{}\"", self.description));
+
         output.push_str(",");
-	output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
-        
+        output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
+
         output.push_str(",");
-	output.push_str(&format!("\"maxCount\": {}", self.max_count.to_string()));
-        
+        output.push_str(&format!("\"maxCount\": {}", self.max_count.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"name\": \"{}\"", self.name));
-        
+        output.push_str(&format!("\"name\": \"{}\"", self.name));
+
         output.push_str(",");
-	output.push_str(&format!("\"open\": {}", self.open.to_string()));
+        output.push_str(&format!("\"open\": {}", self.open.to_string()));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -677,20 +670,19 @@ pub struct ApiDeleteStorageObjectId {
 
 impl ToRestString for ApiDeleteStorageObjectId {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"collection\": \"{}\"", self.collection));
-        
+
+        output.push_str(&format!("\"collection\": \"{}\"", self.collection));
+
         output.push_str(",");
-	output.push_str(&format!("\"key\": \"{}\"", self.key));
-        
+        output.push_str(&format!("\"key\": \"{}\"", self.key));
+
         output.push_str(",");
-	output.push_str(&format!("\"version\": \"{}\"", self.version));
+        output.push_str(&format!("\"version\": \"{}\"", self.version));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -703,17 +695,20 @@ pub struct ApiDeleteStorageObjectsRequest {
 
 impl ToRestString for ApiDeleteStorageObjectsRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
+
         output.push_str(&format!("\"objectIds\": [{}]", {
-            let vec_string = self.object_ids.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .object_ids
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -729,30 +724,29 @@ pub struct ApiEvent {
 
 impl ToRestString for ApiEvent {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"external\": {}", self.external.to_string()));
-        
+
+        output.push_str(&format!("\"external\": {}", self.external.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"name\": \"{}\"", self.name));
-        
+        output.push_str(&format!("\"name\": \"{}\"", self.name));
+
         output.push_str(",");
-  	output.push_str(&format!("\"properties\": {{ {} }}", {
-	    let map_string = self
-		.properties
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
-        
+        output.push_str(&format!("\"properties\": {{ {} }}", {
+            let map_string = self
+                .properties
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
+
         output.push_str(",");
-	output.push_str(&format!("\"timestamp\": \"{}\"", self.timestamp));
+        output.push_str(&format!("\"timestamp\": \"{}\"", self.timestamp));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -767,20 +761,19 @@ pub struct ApiFriend {
 
 impl ToRestString for ApiFriend {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"state\": {}", self.state.to_string()));
-        
+
+        output.push_str(&format!("\"state\": {}", self.state.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-        
+        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"user\": {}", self.user.to_string()));
+        output.push_str(&format!("\"user\": {}", self.user.to_string()));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -794,20 +787,23 @@ pub struct ApiFriendList {
 
 impl ToRestString for ApiFriendList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-        
+
+        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
+
         output.push_str(",");
         output.push_str(&format!("\"friends\": [{}]", {
-            let vec_string = self.friends.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .friends
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -831,47 +827,46 @@ pub struct ApiGroup {
 
 impl ToRestString for ApiGroup {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
-        
+
+        output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
+
         output.push_str(",");
-	output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-        
+        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"creatorId\": \"{}\"", self.creator_id));
-        
+        output.push_str(&format!("\"creatorId\": \"{}\"", self.creator_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"description\": \"{}\"", self.description));
-        
+        output.push_str(&format!("\"description\": \"{}\"", self.description));
+
         output.push_str(",");
-	output.push_str(&format!("\"edgeCount\": {}", self.edge_count.to_string()));
-        
+        output.push_str(&format!("\"edgeCount\": {}", self.edge_count.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"id\": \"{}\"", self.id));
-        
+        output.push_str(&format!("\"id\": \"{}\"", self.id));
+
         output.push_str(",");
-	output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
-        
+        output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
+
         output.push_str(",");
-	output.push_str(&format!("\"maxCount\": {}", self.max_count.to_string()));
-        
+        output.push_str(&format!("\"maxCount\": {}", self.max_count.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-        
+        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
+
         output.push_str(",");
-	output.push_str(&format!("\"name\": \"{}\"", self.name));
-        
+        output.push_str(&format!("\"name\": \"{}\"", self.name));
+
         output.push_str(",");
-	output.push_str(&format!("\"open\": {}", self.open.to_string()));
-        
+        output.push_str(&format!("\"open\": {}", self.open.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
+        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -885,20 +880,23 @@ pub struct ApiGroupList {
 
 impl ToRestString for ApiGroupList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-        
+
+        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
+
         output.push_str(",");
         output.push_str(&format!("\"groups\": [{}]", {
-            let vec_string = self.groups.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .groups
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -912,20 +910,23 @@ pub struct ApiGroupUserList {
 
 impl ToRestString for ApiGroupUserList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-        
+
+        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
+
         output.push_str(",");
         output.push_str(&format!("\"groupUsers\": [{}]", {
-            let vec_string = self.group_users.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .group_users
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -949,47 +950,49 @@ pub struct ApiLeaderboardRecord {
 
 impl ToRestString for ApiLeaderboardRecord {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-        
+
+        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"expiryTime\": \"{}\"", self.expiry_time));
-        
+        output.push_str(&format!("\"expiryTime\": \"{}\"", self.expiry_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"leaderboardId\": \"{}\"", self.leaderboard_id));
-        
+        output.push_str(&format!("\"leaderboardId\": \"{}\"", self.leaderboard_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"maxNumScore\": {}", self.max_num_score.to_string()));
-        
+        output.push_str(&format!(
+            "\"maxNumScore\": {}",
+            self.max_num_score.to_string()
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-        
+        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
+
         output.push_str(",");
-	output.push_str(&format!("\"numScore\": {}", self.num_score.to_string()));
-        
+        output.push_str(&format!("\"numScore\": {}", self.num_score.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"ownerId\": \"{}\"", self.owner_id));
-        
+        output.push_str(&format!("\"ownerId\": \"{}\"", self.owner_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"rank\": \"{}\"", self.rank));
-        
+        output.push_str(&format!("\"rank\": \"{}\"", self.rank));
+
         output.push_str(",");
-	output.push_str(&format!("\"score\": \"{}\"", self.score));
-        
+        output.push_str(&format!("\"score\": \"{}\"", self.score));
+
         output.push_str(",");
-	output.push_str(&format!("\"subscore\": \"{}\"", self.subscore));
-        
+        output.push_str(&format!("\"subscore\": \"{}\"", self.subscore));
+
         output.push_str(",");
-	output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-        
+        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"username\": \"{}\"", self.username));
+        output.push_str(&format!("\"username\": \"{}\"", self.username));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1005,29 +1008,36 @@ pub struct ApiLeaderboardRecordList {
 
 impl ToRestString for ApiLeaderboardRecordList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
-        
+
+        output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
+
         output.push_str(",");
         output.push_str(&format!("\"ownerRecords\": [{}]", {
-            let vec_string = self.owner_records.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .owner_records
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
-        
+
         output.push_str(",");
-	output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
-        
+        output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
+
         output.push_str(",");
         output.push_str(&format!("\"records\": [{}]", {
-            let vec_string = self.records.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .records
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1041,17 +1051,16 @@ pub struct ApiLinkSteamRequest {
 
 impl ToRestString for ApiLinkSteamRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"account\": {}", self.account.to_string()));
-        
+
+        output.push_str(&format!("\"account\": {}", self.account.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"sync\": {}", self.sync.to_string()));
+        output.push_str(&format!("\"sync\": {}", self.sync.to_string()));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1069,29 +1078,31 @@ pub struct ApiMatch {
 
 impl ToRestString for ApiMatch {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"authoritative\": {}", self.authoritative.to_string()));
-        
+
+        output.push_str(&format!(
+            "\"authoritative\": {}",
+            self.authoritative.to_string()
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"handlerName\": \"{}\"", self.handler_name));
-        
+        output.push_str(&format!("\"handlerName\": \"{}\"", self.handler_name));
+
         output.push_str(",");
-	output.push_str(&format!("\"label\": \"{}\"", self.label));
-        
+        output.push_str(&format!("\"label\": \"{}\"", self.label));
+
         output.push_str(",");
-	output.push_str(&format!("\"matchId\": \"{}\"", self.match_id));
-        
+        output.push_str(&format!("\"matchId\": \"{}\"", self.match_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"size\": {}", self.size.to_string()));
-        
+        output.push_str(&format!("\"size\": {}", self.size.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"tickRate\": {}", self.tick_rate.to_string()));
+        output.push_str(&format!("\"tickRate\": {}", self.tick_rate.to_string()));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1104,17 +1115,20 @@ pub struct ApiMatchList {
 
 impl ToRestString for ApiMatchList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
+
         output.push_str(&format!("\"matches\": [{}]", {
-            let vec_string = self.matches.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .matches
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1133,32 +1147,31 @@ pub struct ApiNotification {
 
 impl ToRestString for ApiNotification {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"code\": {}", self.code.to_string()));
-        
+
+        output.push_str(&format!("\"code\": {}", self.code.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"content\": \"{}\"", self.content));
-        
+        output.push_str(&format!("\"content\": \"{}\"", self.content));
+
         output.push_str(",");
-	output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-        
+        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"id\": \"{}\"", self.id));
-        
+        output.push_str(&format!("\"id\": \"{}\"", self.id));
+
         output.push_str(",");
-	output.push_str(&format!("\"persistent\": {}", self.persistent.to_string()));
-        
+        output.push_str(&format!("\"persistent\": {}", self.persistent.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"senderId\": \"{}\"", self.sender_id));
-        
+        output.push_str(&format!("\"senderId\": \"{}\"", self.sender_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"subject\": \"{}\"", self.subject));
+        output.push_str(&format!("\"subject\": \"{}\"", self.subject));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1172,20 +1185,26 @@ pub struct ApiNotificationList {
 
 impl ToRestString for ApiNotificationList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"cacheableCursor\": \"{}\"", self.cacheable_cursor));
-        
+
+        output.push_str(&format!(
+            "\"cacheableCursor\": \"{}\"",
+            self.cacheable_cursor
+        ));
+
         output.push_str(",");
         output.push_str(&format!("\"notifications\": [{}]", {
-            let vec_string = self.notifications.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .notifications
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1200,20 +1219,19 @@ pub struct ApiReadStorageObjectId {
 
 impl ToRestString for ApiReadStorageObjectId {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"collection\": \"{}\"", self.collection));
-        
+
+        output.push_str(&format!("\"collection\": \"{}\"", self.collection));
+
         output.push_str(",");
-	output.push_str(&format!("\"key\": \"{}\"", self.key));
-        
+        output.push_str(&format!("\"key\": \"{}\"", self.key));
+
         output.push_str(",");
-	output.push_str(&format!("\"userId\": \"{}\"", self.user_id));
+        output.push_str(&format!("\"userId\": \"{}\"", self.user_id));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1226,17 +1244,20 @@ pub struct ApiReadStorageObjectsRequest {
 
 impl ToRestString for ApiReadStorageObjectsRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
+
         output.push_str(&format!("\"objectIds\": [{}]", {
-            let vec_string = self.object_ids.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .object_ids
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1251,20 +1272,19 @@ pub struct ApiRpc {
 
 impl ToRestString for ApiRpc {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"httpKey\": \"{}\"", self.http_key));
-        
+
+        output.push_str(&format!("\"httpKey\": \"{}\"", self.http_key));
+
         output.push_str(",");
-	output.push_str(&format!("\"id\": \"{}\"", self.id));
-        
+        output.push_str(&format!("\"id\": \"{}\"", self.id));
+
         output.push_str(",");
-	output.push_str(&format!("\"payload\": \"{}\"", self.payload));
+        output.push_str(&format!("\"payload\": \"{}\"", self.payload));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1279,20 +1299,19 @@ pub struct ApiSession {
 
 impl ToRestString for ApiSession {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"created\": {}", self.created.to_string()));
-        
+
+        output.push_str(&format!("\"created\": {}", self.created.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"refreshToken\": \"{}\"", self.refresh_token));
-        
+        output.push_str(&format!("\"refreshToken\": \"{}\"", self.refresh_token));
+
         output.push_str(",");
-	output.push_str(&format!("\"token\": \"{}\"", self.token));
+        output.push_str(&format!("\"token\": \"{}\"", self.token));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1306,17 +1325,16 @@ pub struct ApiSessionLogoutRequest {
 
 impl ToRestString for ApiSessionLogoutRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"refreshToken\": \"{}\"", self.refresh_token));
-        
+
+        output.push_str(&format!("\"refreshToken\": \"{}\"", self.refresh_token));
+
         output.push_str(",");
-	output.push_str(&format!("\"token\": \"{}\"", self.token));
+        output.push_str(&format!("\"token\": \"{}\"", self.token));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1330,24 +1348,23 @@ pub struct ApiSessionRefreshRequest {
 
 impl ToRestString for ApiSessionRefreshRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"token\": \"{}\"", self.token));
-        
+
+        output.push_str(&format!("\"token\": \"{}\"", self.token));
+
         output.push_str(",");
-  	output.push_str(&format!("\"vars\": {{ {} }}", {
-	    let map_string = self
-		.vars
-		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
+        output.push_str(&format!("\"vars\": {{ {} }}", {
+            let map_string = self
+                .vars
+                .iter()
+                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .collect::<Vec<_>>();
+            map_string.join(", ")
+        }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1368,38 +1385,43 @@ pub struct ApiStorageObject {
 
 impl ToRestString for ApiStorageObject {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"collection\": \"{}\"", self.collection));
-        
+
+        output.push_str(&format!("\"collection\": \"{}\"", self.collection));
+
         output.push_str(",");
-	output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-        
+        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"key\": \"{}\"", self.key));
-        
+        output.push_str(&format!("\"key\": \"{}\"", self.key));
+
         output.push_str(",");
-	output.push_str(&format!("\"permissionRead\": {}", self.permission_read.to_string()));
-        
+        output.push_str(&format!(
+            "\"permissionRead\": {}",
+            self.permission_read.to_string()
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"permissionWrite\": {}", self.permission_write.to_string()));
-        
+        output.push_str(&format!(
+            "\"permissionWrite\": {}",
+            self.permission_write.to_string()
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-        
+        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"userId\": \"{}\"", self.user_id));
-        
+        output.push_str(&format!("\"userId\": \"{}\"", self.user_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"value\": \"{}\"", self.value));
-        
+        output.push_str(&format!("\"value\": \"{}\"", self.value));
+
         output.push_str(",");
-	output.push_str(&format!("\"version\": \"{}\"", self.version));
+        output.push_str(&format!("\"version\": \"{}\"", self.version));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1415,23 +1437,22 @@ pub struct ApiStorageObjectAck {
 
 impl ToRestString for ApiStorageObjectAck {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"collection\": \"{}\"", self.collection));
-        
+
+        output.push_str(&format!("\"collection\": \"{}\"", self.collection));
+
         output.push_str(",");
-	output.push_str(&format!("\"key\": \"{}\"", self.key));
-        
+        output.push_str(&format!("\"key\": \"{}\"", self.key));
+
         output.push_str(",");
-	output.push_str(&format!("\"userId\": \"{}\"", self.user_id));
-        
+        output.push_str(&format!("\"userId\": \"{}\"", self.user_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"version\": \"{}\"", self.version));
+        output.push_str(&format!("\"version\": \"{}\"", self.version));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1444,17 +1465,16 @@ pub struct ApiStorageObjectAcks {
 
 impl ToRestString for ApiStorageObjectAcks {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
+
         output.push_str(&format!("\"acks\": [{}]", {
             let vec_string = self.acks.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1468,20 +1488,23 @@ pub struct ApiStorageObjectList {
 
 impl ToRestString for ApiStorageObjectList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-        
+
+        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
+
         output.push_str(",");
         output.push_str(&format!("\"objects\": [{}]", {
-            let vec_string = self.objects.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .objects
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1494,17 +1517,20 @@ pub struct ApiStorageObjects {
 
 impl ToRestString for ApiStorageObjects {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
+
         output.push_str(&format!("\"objects\": [{}]", {
-            let vec_string = self.objects.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .objects
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1533,62 +1559,67 @@ pub struct ApiTournament {
 
 impl ToRestString for ApiTournament {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"canEnter\": {}", self.can_enter.to_string()));
-        
+
+        output.push_str(&format!("\"canEnter\": {}", self.can_enter.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"category\": {}", self.category.to_string()));
-        
+        output.push_str(&format!("\"category\": {}", self.category.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-        
+        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"description\": \"{}\"", self.description));
-        
+        output.push_str(&format!("\"description\": \"{}\"", self.description));
+
         output.push_str(",");
-	output.push_str(&format!("\"duration\": {}", self.duration.to_string()));
-        
+        output.push_str(&format!("\"duration\": {}", self.duration.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"endActive\": {}", self.end_active.to_string()));
-        
+        output.push_str(&format!("\"endActive\": {}", self.end_active.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"endTime\": \"{}\"", self.end_time));
-        
+        output.push_str(&format!("\"endTime\": \"{}\"", self.end_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"id\": \"{}\"", self.id));
-        
+        output.push_str(&format!("\"id\": \"{}\"", self.id));
+
         output.push_str(",");
-	output.push_str(&format!("\"maxNumScore\": {}", self.max_num_score.to_string()));
-        
+        output.push_str(&format!(
+            "\"maxNumScore\": {}",
+            self.max_num_score.to_string()
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"maxSize\": {}", self.max_size.to_string()));
-        
+        output.push_str(&format!("\"maxSize\": {}", self.max_size.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-        
+        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
+
         output.push_str(",");
-	output.push_str(&format!("\"nextReset\": {}", self.next_reset.to_string()));
-        
+        output.push_str(&format!("\"nextReset\": {}", self.next_reset.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"size\": {}", self.size.to_string()));
-        
+        output.push_str(&format!("\"size\": {}", self.size.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"sortOrder\": {}", self.sort_order.to_string()));
-        
+        output.push_str(&format!("\"sortOrder\": {}", self.sort_order.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"startActive\": {}", self.start_active.to_string()));
-        
+        output.push_str(&format!(
+            "\"startActive\": {}",
+            self.start_active.to_string()
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"startTime\": \"{}\"", self.start_time));
-        
+        output.push_str(&format!("\"startTime\": \"{}\"", self.start_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"title\": \"{}\"", self.title));
+        output.push_str(&format!("\"title\": \"{}\"", self.title));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1602,20 +1633,23 @@ pub struct ApiTournamentList {
 
 impl ToRestString for ApiTournamentList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-        
+
+        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
+
         output.push_str(",");
         output.push_str(&format!("\"tournaments\": [{}]", {
-            let vec_string = self.tournaments.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .tournaments
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1631,29 +1665,36 @@ pub struct ApiTournamentRecordList {
 
 impl ToRestString for ApiTournamentRecordList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
-        
+
+        output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
+
         output.push_str(",");
         output.push_str(&format!("\"ownerRecords\": [{}]", {
-            let vec_string = self.owner_records.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .owner_records
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
-        
+
         output.push_str(",");
-	output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
-        
+        output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
+
         output.push_str(",");
         output.push_str(&format!("\"records\": [{}]", {
-            let vec_string = self.records.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .records
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1671,29 +1712,28 @@ pub struct ApiUpdateAccountRequest {
 
 impl ToRestString for ApiUpdateAccountRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
-        
+
+        output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
+
         output.push_str(",");
-	output.push_str(&format!("\"displayName\": \"{}\"", self.display_name));
-        
+        output.push_str(&format!("\"displayName\": \"{}\"", self.display_name));
+
         output.push_str(",");
-	output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
-        
+        output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
+
         output.push_str(",");
-	output.push_str(&format!("\"location\": \"{}\"", self.location));
-        
+        output.push_str(&format!("\"location\": \"{}\"", self.location));
+
         output.push_str(",");
-	output.push_str(&format!("\"timezone\": \"{}\"", self.timezone));
-        
+        output.push_str(&format!("\"timezone\": \"{}\"", self.timezone));
+
         output.push_str(",");
-	output.push_str(&format!("\"username\": \"{}\"", self.username));
+        output.push_str(&format!("\"username\": \"{}\"", self.username));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1711,29 +1751,28 @@ pub struct ApiUpdateGroupRequest {
 
 impl ToRestString for ApiUpdateGroupRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
-        
+
+        output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
+
         output.push_str(",");
-	output.push_str(&format!("\"description\": \"{}\"", self.description));
-        
+        output.push_str(&format!("\"description\": \"{}\"", self.description));
+
         output.push_str(",");
-	output.push_str(&format!("\"groupId\": \"{}\"", self.group_id));
-        
+        output.push_str(&format!("\"groupId\": \"{}\"", self.group_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
-        
+        output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
+
         output.push_str(",");
-	output.push_str(&format!("\"name\": \"{}\"", self.name));
-        
+        output.push_str(&format!("\"name\": \"{}\"", self.name));
+
         output.push_str(",");
-	output.push_str(&format!("\"open\": {}", self.open.to_string()));
+        output.push_str(&format!("\"open\": {}", self.open.to_string()));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1763,65 +1802,67 @@ pub struct ApiUser {
 
 impl ToRestString for ApiUser {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"appleId\": \"{}\"", self.apple_id));
-        
+
+        output.push_str(&format!("\"appleId\": \"{}\"", self.apple_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
-        
+        output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
+
         output.push_str(",");
-	output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-        
+        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"displayName\": \"{}\"", self.display_name));
-        
+        output.push_str(&format!("\"displayName\": \"{}\"", self.display_name));
+
         output.push_str(",");
-	output.push_str(&format!("\"edgeCount\": {}", self.edge_count.to_string()));
-        
+        output.push_str(&format!("\"edgeCount\": {}", self.edge_count.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"facebookId\": \"{}\"", self.facebook_id));
-        
+        output.push_str(&format!("\"facebookId\": \"{}\"", self.facebook_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"facebookInstantGameId\": \"{}\"", self.facebook_instant_game_id));
-        
+        output.push_str(&format!(
+            "\"facebookInstantGameId\": \"{}\"",
+            self.facebook_instant_game_id
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"gamecenterId\": \"{}\"", self.gamecenter_id));
-        
+        output.push_str(&format!("\"gamecenterId\": \"{}\"", self.gamecenter_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"googleId\": \"{}\"", self.google_id));
-        
+        output.push_str(&format!("\"googleId\": \"{}\"", self.google_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"id\": \"{}\"", self.id));
-        
+        output.push_str(&format!("\"id\": \"{}\"", self.id));
+
         output.push_str(",");
-	output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
-        
+        output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
+
         output.push_str(",");
-	output.push_str(&format!("\"location\": \"{}\"", self.location));
-        
+        output.push_str(&format!("\"location\": \"{}\"", self.location));
+
         output.push_str(",");
-	output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-        
+        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
+
         output.push_str(",");
-	output.push_str(&format!("\"online\": {}", self.online.to_string()));
-        
+        output.push_str(&format!("\"online\": {}", self.online.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"steamId\": \"{}\"", self.steam_id));
-        
+        output.push_str(&format!("\"steamId\": \"{}\"", self.steam_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"timezone\": \"{}\"", self.timezone));
-        
+        output.push_str(&format!("\"timezone\": \"{}\"", self.timezone));
+
         output.push_str(",");
-	output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-        
+        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"username\": \"{}\"", self.username));
+        output.push_str(&format!("\"username\": \"{}\"", self.username));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1835,20 +1876,23 @@ pub struct ApiUserGroupList {
 
 impl ToRestString for ApiUserGroupList {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-        
+
+        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
+
         output.push_str(",");
         output.push_str(&format!("\"userGroups\": [{}]", {
-            let vec_string = self.user_groups.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .user_groups
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1861,21 +1905,20 @@ pub struct ApiUsers {
 
 impl ToRestString for ApiUsers {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
+
         output.push_str(&format!("\"users\": [{}]", {
             let vec_string = self.users.iter().map(|x| x.to_string()).collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
-/// 
+///
 #[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatePurchaseAppleRequest {
@@ -1884,18 +1927,17 @@ pub struct ApiValidatePurchaseAppleRequest {
 
 impl ToRestString for ApiValidatePurchaseAppleRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"receipt\": \"{}\"", self.receipt));
+
+        output.push_str(&format!("\"receipt\": \"{}\"", self.receipt));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
-/// 
+///
 #[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatePurchaseGoogleRequest {
@@ -1904,18 +1946,17 @@ pub struct ApiValidatePurchaseGoogleRequest {
 
 impl ToRestString for ApiValidatePurchaseGoogleRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"purchase\": \"{}\"", self.purchase));
+
+        output.push_str(&format!("\"purchase\": \"{}\"", self.purchase));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
-/// 
+///
 #[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatePurchaseHuaweiRequest {
@@ -1925,21 +1966,20 @@ pub struct ApiValidatePurchaseHuaweiRequest {
 
 impl ToRestString for ApiValidatePurchaseHuaweiRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"purchase\": \"{}\"", self.purchase));
-        
+
+        output.push_str(&format!("\"purchase\": \"{}\"", self.purchase));
+
         output.push_str(",");
-	output.push_str(&format!("\"signature\": \"{}\"", self.signature));
+        output.push_str(&format!("\"signature\": \"{}\"", self.signature));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
-/// 
+///
 #[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatePurchaseResponse {
@@ -1948,17 +1988,20 @@ pub struct ApiValidatePurchaseResponse {
 
 impl ToRestString for ApiValidatePurchaseResponse {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
+
         output.push_str(&format!("\"validatedPurchases\": [{}]", {
-            let vec_string = self.validated_purchases.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .validated_purchases
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -1978,35 +2021,40 @@ pub struct ApiValidatedPurchase {
 
 impl ToRestString for ApiValidatedPurchase {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-        
+
+        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"environment\": {}", self.environment.to_string()));
-        
+        output.push_str(&format!(
+            "\"environment\": {}",
+            self.environment.to_string()
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"productId\": \"{}\"", self.product_id));
-        
+        output.push_str(&format!("\"productId\": \"{}\"", self.product_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"providerResponse\": \"{}\"", self.provider_response));
-        
+        output.push_str(&format!(
+            "\"providerResponse\": \"{}\"",
+            self.provider_response
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"purchaseTime\": \"{}\"", self.purchase_time));
-        
+        output.push_str(&format!("\"purchaseTime\": \"{}\"", self.purchase_time));
+
         output.push_str(",");
-	output.push_str(&format!("\"store\": {}", self.store.to_string()));
-        
+        output.push_str(&format!("\"store\": {}", self.store.to_string()));
+
         output.push_str(",");
-	output.push_str(&format!("\"transactionId\": \"{}\"", self.transaction_id));
-        
+        output.push_str(&format!("\"transactionId\": \"{}\"", self.transaction_id));
+
         output.push_str(",");
-	output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
+        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -2024,29 +2072,34 @@ pub struct ApiWriteStorageObject {
 
 impl ToRestString for ApiWriteStorageObject {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"collection\": \"{}\"", self.collection));
-        
+
+        output.push_str(&format!("\"collection\": \"{}\"", self.collection));
+
         output.push_str(",");
-	output.push_str(&format!("\"key\": \"{}\"", self.key));
-        
+        output.push_str(&format!("\"key\": \"{}\"", self.key));
+
         output.push_str(",");
-	output.push_str(&format!("\"permissionRead\": {}", self.permission_read.to_string()));
-        
+        output.push_str(&format!(
+            "\"permissionRead\": {}",
+            self.permission_read.to_string()
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"permissionWrite\": {}", self.permission_write.to_string()));
-        
+        output.push_str(&format!(
+            "\"permissionWrite\": {}",
+            self.permission_write.to_string()
+        ));
+
         output.push_str(",");
-	output.push_str(&format!("\"value\": \"{}\"", self.value));
-        
+        output.push_str(&format!("\"value\": \"{}\"", self.value));
+
         output.push_str(",");
-	output.push_str(&format!("\"version\": \"{}\"", self.version));
+        output.push_str(&format!("\"version\": \"{}\"", self.version));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
@@ -2059,21 +2112,24 @@ pub struct ApiWriteStorageObjectsRequest {
 
 impl ToRestString for ApiWriteStorageObjectsRequest {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
+
         output.push_str(&format!("\"objects\": [{}]", {
-            let vec_string = self.objects.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .objects
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
-/// 
+///
 #[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct ProtobufAny {
@@ -2083,21 +2139,20 @@ pub struct ProtobufAny {
 
 impl ToRestString for ProtobufAny {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"typeUrl\": \"{}\"", self.type_url));
-        
+
+        output.push_str(&format!("\"typeUrl\": \"{}\"", self.type_url));
+
         output.push_str(",");
-	output.push_str(&format!("\"value\": \"{}\"", self.value));
+        output.push_str(&format!("\"value\": \"{}\"", self.value));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 
-/// 
+///
 #[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
 pub struct RpcStatus {
@@ -2108,108 +2163,100 @@ pub struct RpcStatus {
 
 impl ToRestString for RpcStatus {
     fn to_string(&self) -> String {
-	let mut output = String::new();
+        let mut output = String::new();
 
-        
         output.push_str("{");
-        
-	output.push_str(&format!("\"code\": {}", self.code.to_string()));
-        
+
+        output.push_str(&format!("\"code\": {}", self.code.to_string()));
+
         output.push_str(",");
         output.push_str(&format!("\"details\": [{}]", {
-            let vec_string = self.details.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let vec_string = self
+                .details
+                .iter()
+                .map(|x| x.to_string())
+                .collect::<Vec<_>>();
             vec_string.join(", ")
         }));
-        
+
         output.push_str(",");
-	output.push_str(&format!("\"message\": \"{}\"", self.message));
+        output.push_str(&format!("\"message\": \"{}\"", self.message));
         output.push_str("}");
-	return output;
+        return output;
     }
 }
 /// A healthcheck which load balancers can use to check the service.
-pub fn healthcheck(
-    bearer_token: &str,
-) -> RestRequest<()> {
+pub fn healthcheck(bearer_token: &str) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/healthcheck".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Fetch the current user's account.
-pub fn get_account(
-    bearer_token: &str,
-) -> RestRequest<ApiAccount> {
+pub fn get_account(bearer_token: &str) -> RestRequest<ApiAccount> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Update fields in the current user's account.
-pub fn update_account(
-    bearer_token: &str,
-    body: ApiUpdateAccountRequest,
-) -> RestRequest<()> {
+pub fn update_account(bearer_token: &str, body: ApiUpdateAccountRequest) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Put;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Authenticate a user with an Apple ID against the server.
@@ -2225,30 +2272,28 @@ pub fn authenticate_apple(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = create {
-    query_params.push_str(&format!("create={:?}&", param));
-}
-if let Some(param) = username {
-    query_params.push_str(&format!("username={}&", param));
-}
+    if let Some(param) = create {
+        query_params.push_str(&format!("create={:?}&", param));
+    }
+    if let Some(param) = username {
+        query_params.push_str(&format!("username={}&", param));
+    }
 
-    let authentication =
-Authentication::Basic {
-	username: basic_auth_username.to_owned(),
-	password: basic_auth_password.to_owned()
+    let authentication = Authentication::Basic {
+        username: basic_auth_username.to_owned(),
+        password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Authenticate a user with a custom id against the server.
@@ -2264,30 +2309,28 @@ pub fn authenticate_custom(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = create {
-    query_params.push_str(&format!("create={:?}&", param));
-}
-if let Some(param) = username {
-    query_params.push_str(&format!("username={}&", param));
-}
+    if let Some(param) = create {
+        query_params.push_str(&format!("create={:?}&", param));
+    }
+    if let Some(param) = username {
+        query_params.push_str(&format!("username={}&", param));
+    }
 
-    let authentication =
-Authentication::Basic {
-	username: basic_auth_username.to_owned(),
-	password: basic_auth_password.to_owned()
+    let authentication = Authentication::Basic {
+        username: basic_auth_username.to_owned(),
+        password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Authenticate a user with a device id against the server.
@@ -2303,30 +2346,28 @@ pub fn authenticate_device(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = create {
-    query_params.push_str(&format!("create={:?}&", param));
-}
-if let Some(param) = username {
-    query_params.push_str(&format!("username={}&", param));
-}
+    if let Some(param) = create {
+        query_params.push_str(&format!("create={:?}&", param));
+    }
+    if let Some(param) = username {
+        query_params.push_str(&format!("username={}&", param));
+    }
 
-    let authentication =
-Authentication::Basic {
-	username: basic_auth_username.to_owned(),
-	password: basic_auth_password.to_owned()
+    let authentication = Authentication::Basic {
+        username: basic_auth_username.to_owned(),
+        password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Authenticate a user with an email+password against the server.
@@ -2342,30 +2383,28 @@ pub fn authenticate_email(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = create {
-    query_params.push_str(&format!("create={:?}&", param));
-}
-if let Some(param) = username {
-    query_params.push_str(&format!("username={}&", param));
-}
+    if let Some(param) = create {
+        query_params.push_str(&format!("create={:?}&", param));
+    }
+    if let Some(param) = username {
+        query_params.push_str(&format!("username={}&", param));
+    }
 
-    let authentication =
-Authentication::Basic {
-	username: basic_auth_username.to_owned(),
-	password: basic_auth_password.to_owned()
+    let authentication = Authentication::Basic {
+        username: basic_auth_username.to_owned(),
+        password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Authenticate a user with a Facebook OAuth token against the server.
@@ -2382,33 +2421,31 @@ pub fn authenticate_facebook(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = create {
-    query_params.push_str(&format!("create={:?}&", param));
-}
-if let Some(param) = username {
-    query_params.push_str(&format!("username={}&", param));
-}
-if let Some(param) = sync {
-    query_params.push_str(&format!("sync={:?}&", param));
-}
+    if let Some(param) = create {
+        query_params.push_str(&format!("create={:?}&", param));
+    }
+    if let Some(param) = username {
+        query_params.push_str(&format!("username={}&", param));
+    }
+    if let Some(param) = sync {
+        query_params.push_str(&format!("sync={:?}&", param));
+    }
 
-    let authentication =
-Authentication::Basic {
-	username: basic_auth_username.to_owned(),
-	password: basic_auth_password.to_owned()
+    let authentication = Authentication::Basic {
+        username: basic_auth_username.to_owned(),
+        password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Authenticate a user with a Facebook Instant Game token against the server.
@@ -2424,30 +2461,28 @@ pub fn authenticate_facebook_instant_game(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = create {
-    query_params.push_str(&format!("create={:?}&", param));
-}
-if let Some(param) = username {
-    query_params.push_str(&format!("username={}&", param));
-}
+    if let Some(param) = create {
+        query_params.push_str(&format!("create={:?}&", param));
+    }
+    if let Some(param) = username {
+        query_params.push_str(&format!("username={}&", param));
+    }
 
-    let authentication =
-Authentication::Basic {
-	username: basic_auth_username.to_owned(),
-	password: basic_auth_password.to_owned()
+    let authentication = Authentication::Basic {
+        username: basic_auth_username.to_owned(),
+        password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Authenticate a user with Apple's GameCenter against the server.
@@ -2463,30 +2498,28 @@ pub fn authenticate_game_center(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = create {
-    query_params.push_str(&format!("create={:?}&", param));
-}
-if let Some(param) = username {
-    query_params.push_str(&format!("username={}&", param));
-}
+    if let Some(param) = create {
+        query_params.push_str(&format!("create={:?}&", param));
+    }
+    if let Some(param) = username {
+        query_params.push_str(&format!("username={}&", param));
+    }
 
-    let authentication =
-Authentication::Basic {
-	username: basic_auth_username.to_owned(),
-	password: basic_auth_password.to_owned()
+    let authentication = Authentication::Basic {
+        username: basic_auth_username.to_owned(),
+        password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Authenticate a user with Google against the server.
@@ -2502,30 +2535,28 @@ pub fn authenticate_google(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = create {
-    query_params.push_str(&format!("create={:?}&", param));
-}
-if let Some(param) = username {
-    query_params.push_str(&format!("username={}&", param));
-}
+    if let Some(param) = create {
+        query_params.push_str(&format!("create={:?}&", param));
+    }
+    if let Some(param) = username {
+        query_params.push_str(&format!("username={}&", param));
+    }
 
-    let authentication =
-Authentication::Basic {
-	username: basic_auth_username.to_owned(),
-	password: basic_auth_password.to_owned()
+    let authentication = Authentication::Basic {
+        username: basic_auth_username.to_owned(),
+        password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Authenticate a user with Steam against the server.
@@ -2542,149 +2573,127 @@ pub fn authenticate_steam(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = create {
-    query_params.push_str(&format!("create={:?}&", param));
-}
-if let Some(param) = username {
-    query_params.push_str(&format!("username={}&", param));
-}
-if let Some(param) = sync {
-    query_params.push_str(&format!("sync={:?}&", param));
-}
+    if let Some(param) = create {
+        query_params.push_str(&format!("create={:?}&", param));
+    }
+    if let Some(param) = username {
+        query_params.push_str(&format!("username={}&", param));
+    }
+    if let Some(param) = sync {
+        query_params.push_str(&format!("sync={:?}&", param));
+    }
 
-    let authentication =
-Authentication::Basic {
-	username: basic_auth_username.to_owned(),
-	password: basic_auth_password.to_owned()
+    let authentication = Authentication::Basic {
+        username: basic_auth_username.to_owned(),
+        password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add an Apple ID to the social profiles on the current user's account.
-pub fn link_apple(
-    bearer_token: &str,
-    body: ApiAccountApple,
-) -> RestRequest<()> {
+pub fn link_apple(bearer_token: &str, body: ApiAccountApple) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/link/apple".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add a custom ID to the social profiles on the current user's account.
-pub fn link_custom(
-    bearer_token: &str,
-    body: ApiAccountCustom,
-) -> RestRequest<()> {
+pub fn link_custom(bearer_token: &str, body: ApiAccountCustom) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/link/custom".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add a device ID to the social profiles on the current user's account.
-pub fn link_device(
-    bearer_token: &str,
-    body: ApiAccountDevice,
-) -> RestRequest<()> {
+pub fn link_device(bearer_token: &str, body: ApiAccountDevice) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/link/device".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add an email+password to the social profiles on the current user's account.
-pub fn link_email(
-    bearer_token: &str,
-    body: ApiAccountEmail,
-) -> RestRequest<()> {
+pub fn link_email(bearer_token: &str, body: ApiAccountEmail) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/link/email".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add Facebook to the social profiles on the current user's account.
@@ -2698,26 +2707,24 @@ pub fn link_facebook(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = sync {
-    query_params.push_str(&format!("sync={:?}&", param));
-}
+    if let Some(param) = sync {
+        query_params.push_str(&format!("sync={:?}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add Facebook Instant Game to the social profiles on the current user's account.
@@ -2731,109 +2738,92 @@ pub fn link_facebook_instant_game(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add Apple's GameCenter to the social profiles on the current user's account.
-pub fn link_game_center(
-    bearer_token: &str,
-    body: ApiAccountGameCenter,
-) -> RestRequest<()> {
+pub fn link_game_center(bearer_token: &str, body: ApiAccountGameCenter) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/link/gamecenter".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add Google to the social profiles on the current user's account.
-pub fn link_google(
-    bearer_token: &str,
-    body: ApiAccountGoogle,
-) -> RestRequest<()> {
+pub fn link_google(bearer_token: &str, body: ApiAccountGoogle) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/link/google".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add Steam to the social profiles on the current user's account.
-pub fn link_steam(
-    bearer_token: &str,
-    body: ApiLinkSteamRequest,
-) -> RestRequest<()> {
+pub fn link_steam(bearer_token: &str, body: ApiLinkSteamRequest) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/link/steam".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Refresh a user's session using a refresh token retrieved from a previous authentication request.
@@ -2848,168 +2838,141 @@ pub fn session_refresh(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-Authentication::Basic {
-	username: basic_auth_username.to_owned(),
-	password: basic_auth_password.to_owned()
+    let authentication = Authentication::Basic {
+        username: basic_auth_username.to_owned(),
+        password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Remove the Apple ID from the social profiles on the current user's account.
-pub fn unlink_apple(
-    bearer_token: &str,
-    body: ApiAccountApple,
-) -> RestRequest<()> {
+pub fn unlink_apple(bearer_token: &str, body: ApiAccountApple) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/unlink/apple".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Remove the custom ID from the social profiles on the current user's account.
-pub fn unlink_custom(
-    bearer_token: &str,
-    body: ApiAccountCustom,
-) -> RestRequest<()> {
+pub fn unlink_custom(bearer_token: &str, body: ApiAccountCustom) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/unlink/custom".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Remove the device ID from the social profiles on the current user's account.
-pub fn unlink_device(
-    bearer_token: &str,
-    body: ApiAccountDevice,
-) -> RestRequest<()> {
+pub fn unlink_device(bearer_token: &str, body: ApiAccountDevice) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/unlink/device".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Remove the email+password from the social profiles on the current user's account.
-pub fn unlink_email(
-    bearer_token: &str,
-    body: ApiAccountEmail,
-) -> RestRequest<()> {
+pub fn unlink_email(bearer_token: &str, body: ApiAccountEmail) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/unlink/email".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Remove Facebook from the social profiles on the current user's account.
-pub fn unlink_facebook(
-    bearer_token: &str,
-    body: ApiAccountFacebook,
-) -> RestRequest<()> {
+pub fn unlink_facebook(bearer_token: &str, body: ApiAccountFacebook) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/unlink/facebook".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Remove Facebook Instant Game profile from the social profiles on the current user's account.
@@ -3023,109 +2986,92 @@ pub fn unlink_facebook_instant_game(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Remove Apple's GameCenter from the social profiles on the current user's account.
-pub fn unlink_game_center(
-    bearer_token: &str,
-    body: ApiAccountGameCenter,
-) -> RestRequest<()> {
+pub fn unlink_game_center(bearer_token: &str, body: ApiAccountGameCenter) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/unlink/gamecenter".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Remove Google from the social profiles on the current user's account.
-pub fn unlink_google(
-    bearer_token: &str,
-    body: ApiAccountGoogle,
-) -> RestRequest<()> {
+pub fn unlink_google(bearer_token: &str, body: ApiAccountGoogle) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/unlink/google".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Remove Steam from the social profiles on the current user's account.
-pub fn unlink_steam(
-    bearer_token: &str,
-    body: ApiAccountSteam,
-) -> RestRequest<()> {
+pub fn unlink_steam(bearer_token: &str, body: ApiAccountSteam) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/account/unlink/steam".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List a channel's message history.
@@ -3142,99 +3088,86 @@ pub fn list_channel_messages(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = forward {
-    query_params.push_str(&format!("forward={:?}&", param));
-}
-if let Some(param) = cursor {
-    query_params.push_str(&format!("cursor={}&", param));
-}
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = forward {
+        query_params.push_str(&format!("forward={:?}&", param));
+    }
+    if let Some(param) = cursor {
+        query_params.push_str(&format!("cursor={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Submit an event for processing in the server's registered runtime custom events handler.
-pub fn event(
-    bearer_token: &str,
-    body: ApiEvent,
-) -> RestRequest<()> {
+pub fn event(bearer_token: &str, body: ApiEvent) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/event".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Delete one or more users by ID or username.
-pub fn delete_friends(
-    bearer_token: &str,
-    ids: &[String],
-    usernames: &[String],
-) -> RestRequest<()> {
+pub fn delete_friends(bearer_token: &str, ids: &[String], usernames: &[String]) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/friend".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in ids
-{
-    query_params.push_str(&format!("ids={:?}&", elem));
-}
-for elem in usernames
-{
-    query_params.push_str(&format!("usernames={:?}&", elem));
-}
+    for elem in ids {
+        query_params.push_str(&format!("ids={:?}&", elem));
+    }
+    for elem in usernames {
+        query_params.push_str(&format!("usernames={:?}&", elem));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Delete;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List all friends for the current user.
@@ -3249,108 +3182,93 @@ pub fn list_friends(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = state {
-    query_params.push_str(&format!("state={}&", param));
-}
-if let Some(param) = cursor {
-    query_params.push_str(&format!("cursor={}&", param));
-}
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = state {
+        query_params.push_str(&format!("state={}&", param));
+    }
+    if let Some(param) = cursor {
+        query_params.push_str(&format!("cursor={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add friends by ID or username to a user's account.
-pub fn add_friends(
-    bearer_token: &str,
-    ids: &[String],
-    usernames: &[String],
-) -> RestRequest<()> {
+pub fn add_friends(bearer_token: &str, ids: &[String], usernames: &[String]) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/friend".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in ids
-{
-    query_params.push_str(&format!("ids={:?}&", elem));
-}
-for elem in usernames
-{
-    query_params.push_str(&format!("usernames={:?}&", elem));
-}
+    for elem in ids {
+        query_params.push_str(&format!("ids={:?}&", elem));
+    }
+    for elem in usernames {
+        query_params.push_str(&format!("usernames={:?}&", elem));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Block one or more users by ID or username.
-pub fn block_friends(
-    bearer_token: &str,
-    ids: &[String],
-    usernames: &[String],
-) -> RestRequest<()> {
+pub fn block_friends(bearer_token: &str, ids: &[String], usernames: &[String]) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/friend/block".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in ids
-{
-    query_params.push_str(&format!("ids={:?}&", elem));
-}
-for elem in usernames
-{
-    query_params.push_str(&format!("usernames={:?}&", elem));
-}
+    for elem in ids {
+        query_params.push_str(&format!("ids={:?}&", elem));
+    }
+    for elem in usernames {
+        query_params.push_str(&format!("usernames={:?}&", elem));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Import Facebook friends and add them to a user's account.
@@ -3364,26 +3282,24 @@ pub fn import_facebook_friends(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = reset {
-    query_params.push_str(&format!("reset={:?}&", param));
-}
+    if let Some(param) = reset {
+        query_params.push_str(&format!("reset={:?}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Import Steam friends and add them to a user's account.
@@ -3397,26 +3313,24 @@ pub fn import_steam_friends(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = reset {
-    query_params.push_str(&format!("reset={:?}&", param));
-}
+    if let Some(param) = reset {
+        query_params.push_str(&format!("reset={:?}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List groups based on given filters.
@@ -3431,68 +3345,59 @@ pub fn list_groups(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = name {
-    query_params.push_str(&format!("name={}&", param));
-}
-if let Some(param) = cursor {
-    query_params.push_str(&format!("cursor={}&", param));
-}
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
+    if let Some(param) = name {
+        query_params.push_str(&format!("name={}&", param));
+    }
+    if let Some(param) = cursor {
+        query_params.push_str(&format!("cursor={}&", param));
+    }
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Create a new group with the current user as the owner.
-pub fn create_group(
-    bearer_token: &str,
-    body: ApiCreateGroupRequest,
-) -> RestRequest<ApiGroup> {
+pub fn create_group(bearer_token: &str, body: ApiCreateGroupRequest) -> RestRequest<ApiGroup> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/group".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Delete a group by ID.
-pub fn delete_group(
-    bearer_token: &str,
-    group_id: &str,
-) -> RestRequest<()> {
+pub fn delete_group(bearer_token: &str, group_id: &str) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/group/{groupId}".to_string();
     urlpath = urlpath.replace("{groupId}", group_id);
@@ -3500,22 +3405,21 @@ pub fn delete_group(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Delete;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Update fields in a given group.
@@ -3531,92 +3435,78 @@ pub fn update_group(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Put;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Add users to a group.
-pub fn add_group_users(
-    bearer_token: &str,
-    group_id: &str,
-    user_ids: &[String],
-) -> RestRequest<()> {
+pub fn add_group_users(bearer_token: &str, group_id: &str, user_ids: &[String]) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/group/{groupId}/add".to_string();
     urlpath = urlpath.replace("{groupId}", group_id);
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in user_ids
-{
-    query_params.push_str(&format!("user_ids={:?}&", elem));
-}
+    for elem in user_ids {
+        query_params.push_str(&format!("user_ids={:?}&", elem));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Ban a set of users from a group.
-pub fn ban_group_users(
-    bearer_token: &str,
-    group_id: &str,
-    user_ids: &[String],
-) -> RestRequest<()> {
+pub fn ban_group_users(bearer_token: &str, group_id: &str, user_ids: &[String]) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/group/{groupId}/ban".to_string();
     urlpath = urlpath.replace("{groupId}", group_id);
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in user_ids
-{
-    query_params.push_str(&format!("user_ids={:?}&", elem));
-}
+    for elem in user_ids {
+        query_params.push_str(&format!("user_ids={:?}&", elem));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Demote a set of users in a group to the next role down.
@@ -3631,34 +3521,29 @@ pub fn demote_group_users(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in user_ids
-{
-    query_params.push_str(&format!("user_ids={:?}&", elem));
-}
+    for elem in user_ids {
+        query_params.push_str(&format!("user_ids={:?}&", elem));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Immediately join an open group, or request to join a closed one.
-pub fn join_group(
-    bearer_token: &str,
-    group_id: &str,
-) -> RestRequest<()> {
+pub fn join_group(bearer_token: &str, group_id: &str) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/group/{groupId}/join".to_string();
     urlpath = urlpath.replace("{groupId}", group_id);
@@ -3666,22 +3551,21 @@ pub fn join_group(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Kick a set of users from a group.
@@ -3696,34 +3580,29 @@ pub fn kick_group_users(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in user_ids
-{
-    query_params.push_str(&format!("user_ids={:?}&", elem));
-}
+    for elem in user_ids {
+        query_params.push_str(&format!("user_ids={:?}&", elem));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Leave a group the user is a member of.
-pub fn leave_group(
-    bearer_token: &str,
-    group_id: &str,
-) -> RestRequest<()> {
+pub fn leave_group(bearer_token: &str, group_id: &str) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/group/{groupId}/leave".to_string();
     urlpath = urlpath.replace("{groupId}", group_id);
@@ -3731,22 +3610,21 @@ pub fn leave_group(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Promote a set of users in a group to the next role up.
@@ -3761,27 +3639,25 @@ pub fn promote_group_users(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in user_ids
-{
-    query_params.push_str(&format!("user_ids={:?}&", elem));
-}
+    for elem in user_ids {
+        query_params.push_str(&format!("user_ids={:?}&", elem));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List all users that are part of a group.
@@ -3798,32 +3674,31 @@ pub fn list_group_users(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = state {
-    query_params.push_str(&format!("state={}&", param));
-}
-if let Some(param) = cursor {
-    query_params.push_str(&format!("cursor={}&", param));
-}
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = state {
+        query_params.push_str(&format!("state={}&", param));
+    }
+    if let Some(param) = cursor {
+        query_params.push_str(&format!("cursor={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Validate Apple IAP Receipt
@@ -3837,22 +3712,20 @@ pub fn validate_purchase_apple(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Validate Google IAP Receipt
@@ -3866,22 +3739,20 @@ pub fn validate_purchase_google(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Validate Huawei IAP Receipt
@@ -3895,29 +3766,24 @@ pub fn validate_purchase_huawei(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Delete a leaderboard record.
-pub fn delete_leaderboard_record(
-    bearer_token: &str,
-    leaderboard_id: &str,
-) -> RestRequest<()> {
+pub fn delete_leaderboard_record(bearer_token: &str, leaderboard_id: &str) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/leaderboard/{leaderboardId}".to_string();
     urlpath = urlpath.replace("{leaderboardId}", leaderboard_id);
@@ -3925,22 +3791,21 @@ pub fn delete_leaderboard_record(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Delete;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List leaderboard records.
@@ -3958,36 +3823,34 @@ pub fn list_leaderboard_records(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in owner_ids
-{
-    query_params.push_str(&format!("owner_ids={:?}&", elem));
-}
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = cursor {
-    query_params.push_str(&format!("cursor={}&", param));
-}
-if let Some(param) = expiry {
-    query_params.push_str(&format!("expiry={}&", param));
-}
+    for elem in owner_ids {
+        query_params.push_str(&format!("owner_ids={:?}&", elem));
+    }
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = cursor {
+        query_params.push_str(&format!("cursor={}&", param));
+    }
+    if let Some(param) = expiry {
+        query_params.push_str(&format!("expiry={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Write a record to a leaderboard.
@@ -4003,22 +3866,20 @@ pub fn write_leaderboard_record(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List leaderboard records that belong to a user.
@@ -4036,29 +3897,28 @@ pub fn list_leaderboard_records_around_owner(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = expiry {
-    query_params.push_str(&format!("expiry={}&", param));
-}
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = expiry {
+        query_params.push_str(&format!("expiry={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Fetch list of running matches.
@@ -4076,74 +3936,68 @@ pub fn list_matches(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = authoritative {
-    query_params.push_str(&format!("authoritative={:?}&", param));
-}
-if let Some(param) = label {
-    query_params.push_str(&format!("label={}&", param));
-}
-if let Some(param) = min_size {
-    query_params.push_str(&format!("min_size={}&", param));
-}
-if let Some(param) = max_size {
-    query_params.push_str(&format!("max_size={}&", param));
-}
-if let Some(param) = query {
-    query_params.push_str(&format!("query={}&", param));
-}
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = authoritative {
+        query_params.push_str(&format!("authoritative={:?}&", param));
+    }
+    if let Some(param) = label {
+        query_params.push_str(&format!("label={}&", param));
+    }
+    if let Some(param) = min_size {
+        query_params.push_str(&format!("min_size={}&", param));
+    }
+    if let Some(param) = max_size {
+        query_params.push_str(&format!("max_size={}&", param));
+    }
+    if let Some(param) = query {
+        query_params.push_str(&format!("query={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Delete one or more notifications for the current user.
-pub fn delete_notifications(
-    bearer_token: &str,
-    ids: &[String],
-) -> RestRequest<()> {
+pub fn delete_notifications(bearer_token: &str, ids: &[String]) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/notification".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in ids
-{
-    query_params.push_str(&format!("ids={:?}&", elem));
-}
+    for elem in ids {
+        query_params.push_str(&format!("ids={:?}&", elem));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Delete;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Fetch list of notifications.
@@ -4157,29 +4011,28 @@ pub fn list_notifications(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = cacheable_cursor {
-    query_params.push_str(&format!("cacheable_cursor={}&", param));
-}
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = cacheable_cursor {
+        query_params.push_str(&format!("cacheable_cursor={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Execute a Lua function on the server.
@@ -4195,29 +4048,28 @@ pub fn rpc_func_2(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = payload {
-    query_params.push_str(&format!("payload={}&", param));
-}
-if let Some(param) = http_key {
-    query_params.push_str(&format!("http_key={}&", param));
-}
+    if let Some(param) = payload {
+        query_params.push_str(&format!("payload={}&", param));
+    }
+    if let Some(param) = http_key {
+        query_params.push_str(&format!("http_key={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Execute a Lua function on the server.
@@ -4233,55 +4085,48 @@ pub fn rpc_func(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = http_key {
-    query_params.push_str(&format!("http_key={}&", param));
-}
+    if let Some(param) = http_key {
+        query_params.push_str(&format!("http_key={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Log out a session, invalidate a refresh token, or log out all sessions/refresh tokens for a user.
-pub fn session_logout(
-    bearer_token: &str,
-    body: ApiSessionLogoutRequest,
-) -> RestRequest<()> {
+pub fn session_logout(bearer_token: &str, body: ApiSessionLogoutRequest) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/session/logout".to_string();
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Get storage objects.
@@ -4295,22 +4140,20 @@ pub fn read_storage_objects(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Write objects into the storage engine.
@@ -4324,23 +4167,21 @@ pub fn write_storage_objects(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
     println!("{}", body_json);
-    
 
     let method = Method::Put;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Delete one or more objects by ID or username.
@@ -4354,22 +4195,20 @@ pub fn delete_storage_objects(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Put;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List publicly readable storage objects in a given collection.
@@ -4386,32 +4225,31 @@ pub fn list_storage_objects(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = user_id {
-    query_params.push_str(&format!("user_id={}&", param));
-}
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = cursor {
-    query_params.push_str(&format!("cursor={}&", param));
-}
+    if let Some(param) = user_id {
+        query_params.push_str(&format!("user_id={}&", param));
+    }
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = cursor {
+        query_params.push_str(&format!("cursor={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List publicly readable storage objects in a given collection.
@@ -4429,29 +4267,28 @@ pub fn list_storage_objects_2(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = cursor {
-    query_params.push_str(&format!("cursor={}&", param));
-}
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = cursor {
+        query_params.push_str(&format!("cursor={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List current or upcoming tournaments.
@@ -4469,41 +4306,40 @@ pub fn list_tournaments(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = category_start {
-    query_params.push_str(&format!("category_start={}&", param));
-}
-if let Some(param) = category_end {
-    query_params.push_str(&format!("category_end={}&", param));
-}
-if let Some(param) = start_time {
-    query_params.push_str(&format!("start_time={}&", param));
-}
-if let Some(param) = end_time {
-    query_params.push_str(&format!("end_time={}&", param));
-}
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = cursor {
-    query_params.push_str(&format!("cursor={}&", param));
-}
+    if let Some(param) = category_start {
+        query_params.push_str(&format!("category_start={}&", param));
+    }
+    if let Some(param) = category_end {
+        query_params.push_str(&format!("category_end={}&", param));
+    }
+    if let Some(param) = start_time {
+        query_params.push_str(&format!("start_time={}&", param));
+    }
+    if let Some(param) = end_time {
+        query_params.push_str(&format!("end_time={}&", param));
+    }
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = cursor {
+        query_params.push_str(&format!("cursor={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List tournament records.
@@ -4521,36 +4357,34 @@ pub fn list_tournament_records(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in owner_ids
-{
-    query_params.push_str(&format!("owner_ids={:?}&", elem));
-}
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = cursor {
-    query_params.push_str(&format!("cursor={}&", param));
-}
-if let Some(param) = expiry {
-    query_params.push_str(&format!("expiry={}&", param));
-}
+    for elem in owner_ids {
+        query_params.push_str(&format!("owner_ids={:?}&", elem));
+    }
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = cursor {
+        query_params.push_str(&format!("cursor={}&", param));
+    }
+    if let Some(param) = expiry {
+        query_params.push_str(&format!("expiry={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Write a record to a tournament.
@@ -4566,29 +4400,24 @@ pub fn write_tournament_record(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    
 
     let method = Method::Put;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Attempt to join an open and running tournament.
-pub fn join_tournament(
-    bearer_token: &str,
-    tournament_id: &str,
-) -> RestRequest<()> {
+pub fn join_tournament(bearer_token: &str, tournament_id: &str) -> RestRequest<()> {
     #[allow(unused_mut)]
     let mut urlpath = "/v2/tournament/{tournamentId}/join".to_string();
     urlpath = urlpath.replace("{tournamentId}", tournament_id);
@@ -4596,22 +4425,21 @@ pub fn join_tournament(
     #[allow(unused_mut)]
     let mut query_params = String::new();
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Post;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List tournament records for a given owner.
@@ -4629,29 +4457,28 @@ pub fn list_tournament_records_around_owner(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = expiry {
-    query_params.push_str(&format!("expiry={}&", param));
-}
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = expiry {
+        query_params.push_str(&format!("expiry={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// Fetch zero or more users by ID and/or username.
@@ -4666,35 +4493,31 @@ pub fn get_users(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-for elem in ids
-{
-    query_params.push_str(&format!("ids={:?}&", elem));
-}
-for elem in usernames
-{
-    query_params.push_str(&format!("usernames={:?}&", elem));
-}
-for elem in facebook_ids
-{
-    query_params.push_str(&format!("facebook_ids={:?}&", elem));
-}
+    for elem in ids {
+        query_params.push_str(&format!("ids={:?}&", elem));
+    }
+    for elem in usernames {
+        query_params.push_str(&format!("usernames={:?}&", elem));
+    }
+    for elem in facebook_ids {
+        query_params.push_str(&format!("facebook_ids={:?}&", elem));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }
 /// List groups the current user belongs to.
@@ -4711,31 +4534,30 @@ pub fn list_user_groups(
 
     #[allow(unused_mut)]
     let mut query_params = String::new();
-if let Some(param) = limit {
-    query_params.push_str(&format!("limit={}&", param));
-}
-if let Some(param) = state {
-    query_params.push_str(&format!("state={}&", param));
-}
-if let Some(param) = cursor {
-    query_params.push_str(&format!("cursor={}&", param));
-}
+    if let Some(param) = limit {
+        query_params.push_str(&format!("limit={}&", param));
+    }
+    if let Some(param) = state {
+        query_params.push_str(&format!("state={}&", param));
+    }
+    if let Some(param) = cursor {
+        query_params.push_str(&format!("cursor={}&", param));
+    }
 
-    let authentication =
-    Authentication::Bearer {
-	token: bearer_token.to_owned()
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
     };
-    
+
     let body_json = String::new();
 
     let method = Method::Get;
 
     RestRequest {
-       authentication,
-       urlpath,
-       query_params,
-       body: body_json,
-       method,
-       _marker: std::marker::PhantomData
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
     }
 }

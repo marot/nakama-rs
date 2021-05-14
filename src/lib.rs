@@ -4,6 +4,7 @@ pub mod config;
 
 pub mod api_client;
 
+pub mod HttpAdapter;
 pub mod async_client;
 pub mod matchmaker;
 
