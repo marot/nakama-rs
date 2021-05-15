@@ -3217,10 +3217,10 @@ pub fn add_friends(bearer_token: &str, ids: &[String], usernames: &[String]) -> 
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in ids {
-        query_params.push_str(&format!("ids={:?}&", elem));
+        query_params.push_str(&format!("ids={}&", elem));
     }
     for elem in usernames {
-        query_params.push_str(&format!("usernames={:?}&", elem));
+        query_params.push_str(&format!("usernames={}&", elem));
     }
 
     let authentication = Authentication::Bearer {

@@ -15,11 +15,9 @@ use crate::api::{
     ApiWriteStorageObjectsRequest,
 };
 use crate::api_gen::ApiSession;
-use crate::async_client::{AsyncRequest, Error};
+use crate::async_client::Error;
 use crate::matchmaker::Matchmaker;
 use nanoserde::DeJson;
-use quad_net::http_request::HttpError;
-use std::sync::mpsc::channel;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 pub enum Event {

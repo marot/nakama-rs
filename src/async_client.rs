@@ -1,8 +1,5 @@
 use super::api;
 use quad_net::http_request::{HttpError, Method, Request, RequestBuilder};
-use std::future::Future;
-use std::pin::Pin;
-use std::task::{Context, Poll};
 
 #[derive(Debug)]
 pub enum Error {

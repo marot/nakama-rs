@@ -4,9 +4,11 @@ pub mod config;
 
 pub mod api_client;
 
-pub mod HttpAdapter;
 pub mod async_client;
+pub mod client;
+pub mod http_adapter;
 pub mod matchmaker;
+pub mod session;
 
 pub mod api {
     pub use super::api_gen::*;

@@ -1,8 +1,7 @@
 use crate::api::RestRequest;
-use quad_net::http_request::{HttpError, Method, Request, RequestBuilder};
+use quad_net::http_request::{HttpError, Method, RequestBuilder};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::future::Future;
 use std::net::ToSocketAddrs;
 
 use crate::api;
@@ -12,15 +11,15 @@ use futures::TryFutureExt;
 use nanoserde::{DeJson, DeJsonErr};
 
 #[async_trait(?Send)]
-trait HttpAdapter<T: DeJson, E: Error> {
+pub trait HttpAdapter<E: Error> {
     // TODO: Correct error type
-    async fn send(&self, request: RestRequest<T>) -> Result<T, E>
-    where
-        T: 'async_trait;
+    async fn send<T: DeJson>(&self, request: RestRequest<T>) -> Result<T, E>;
+    // where
+    //     T: 'async_trait;
 }
 
 #[derive(Debug)]
-enum RestHttpError {
+pub enum RestHttpError {
     HttpError(HttpError),
     JsonError(DeJsonErr),
 }
@@ -33,7 +32,7 @@ impl Display for RestHttpError {
 
 impl Error for RestHttpError {}
 
-struct RestHttpAdapter {
+pub struct RestHttpAdapter {
     server: String,
     port: i32,
 }
@@ -48,10 +47,10 @@ impl RestHttpAdapter {
 }
 
 #[async_trait(?Send)]
-impl<T: DeJson> HttpAdapter<T, RestHttpError> for RestHttpAdapter {
-    async fn send(&self, request: RestRequest<T>) -> Result<T, RestHttpError>
-    where
-        T: 'async_trait,
+impl HttpAdapter<RestHttpError> for RestHttpAdapter {
+    async fn send<T: DeJson>(&self, request: RestRequest<T>) -> Result<T, RestHttpError>
+// where
+    //     T: 'async_trait,
     {
         let auth_header = match request.authentication {
             api::Authentication::Basic { username, password } => {
@@ -188,7 +187,6 @@ impl<A: SocketAdapter<E>, E: Error> Socket<A, E> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::api_gen::Authentication;
     use std::collections::HashMap;
 
     #[test]
