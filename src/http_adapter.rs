@@ -88,102 +88,6 @@ impl HttpAdapter<RestHttpError> for RestHttpAdapter {
     }
 }
 
-trait SocketAdapter<E: Error> {
-    fn on_connected<T>(&mut self, callback: T)
-    where
-        T: Fn();
-    fn on_closed<T>(&mut self, callback: T)
-    where
-        T: Fn();
-
-    // TODO: correct error type
-    fn on_received<T>(&mut self, callback: T)
-    where
-        T: Fn(Result<Vec<u8>, E>);
-
-    fn is_connected(&self) -> bool;
-    fn is_connecting(&self) -> bool;
-
-    fn close(&mut self);
-
-    fn connect<A: ToSocketAddrs>(addr: A, timeout: i32);
-
-    fn send(&mut self, data: &[u8], reliable: bool);
-}
-
-struct WebSocketAdapter {}
-
-#[derive(Debug)]
-enum WebSocketError {
-    IOError,
-    WSError,
-}
-
-impl Display for WebSocketError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Debug::fmt(self, f)
-    }
-}
-
-impl Error for WebSocketError {}
-
-impl SocketAdapter<WebSocketError> for WebSocketAdapter {
-    fn on_connected<T>(&mut self, callback: T)
-    where
-        T: Fn(),
-    {
-        todo!()
-    }
-
-    fn on_closed<T>(&mut self, callback: T)
-    where
-        T: Fn(),
-    {
-        todo!()
-    }
-
-    fn on_received<T>(&mut self, callback: T)
-    where
-        T: Fn(Result<Vec<u8>, WebSocketError>),
-    {
-        todo!()
-    }
-
-    fn is_connected(&self) -> bool {
-        todo!()
-    }
-
-    fn is_connecting(&self) -> bool {
-        todo!()
-    }
-
-    fn close(&mut self) {
-        todo!()
-    }
-
-    fn connect<A: ToSocketAddrs>(addr: A, timeout: i32) {
-        todo!()
-    }
-
-    fn send(&mut self, data: &[u8], reliable: bool) {
-        todo!()
-    }
-}
-
-struct Socket<A: SocketAdapter<E>, E: Error> {
-    pub adapter: A,
-    _marker: std::marker::PhantomData<E>,
-}
-
-impl<A: SocketAdapter<E>, E: Error> Socket<A, E> {
-    fn new(adapter: A) -> Self {
-        Socket {
-            adapter,
-            _marker: std::marker::PhantomData,
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -191,28 +95,28 @@ mod test {
 
     #[test]
     fn test() {
-        let mut a = WebSocketAdapter {};
-
-        let socket = Socket::new(a);
-
-        let mut http = RestHttpAdapter::new("http://127.0.0.1", 7350);
-
-        let request = api_gen::authenticate_device(
-            "defaultkey",
-            "",
-            api::ApiAccountDevice {
-                id: "SomeDeviceId".to_owned(),
-                vars: HashMap::new(),
-            },
-            Some(true),
-            Some("Marot"),
-        );
-
-        let future = http.send(request);
-
-        let result = futures::executor::block_on(future);
-
-        println!("Result {:?}", result);
+        // let mut a = WebSocketAdapter {};
+        //
+        // let socket = Socket::new(a);
+        //
+        // let mut http = RestHttpAdapter::new("http://127.0.0.1", 7350);
+        //
+        // let request = api_gen::authenticate_device(
+        //     "defaultkey",
+        //     "",
+        //     api::ApiAccountDevice {
+        //         id: "SomeDeviceId".to_owned(),
+        //         vars: HashMap::new(),
+        //     },
+        //     Some(true),
+        //     Some("Marot"),
+        // );
+        //
+        // let future = http.send(request);
+        //
+        // let result = futures::executor::block_on(future);
+        //
+        // println!("Result {:?}", result);
 
         // a.on_connected(|| {
         //     println!("Hello World!");
