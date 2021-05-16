@@ -9,24 +9,22 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::task::{Context, Poll};
 
 pub struct WebSocketAdapter {
-    cid: u32,
-
     on_connected: Option<Box<dyn Fn() + 'static>>,
     on_closed: Option<Box<dyn Fn() + 'static>>,
-    on_received: Option<Box<dyn Fn(Result<Vec<u8>, WebSocketError>) + 'static>>,
+    on_received: Option<Box<dyn Fn(Result<String, WebSocketError>) + 'static>>,
 
-    rx: Option<Receiver<Vec<u8>>>,
+    rx: Option<Receiver<String>>,
     sender: Option<qws::Sender>,
 }
 
 // Client on the websocket thread
 struct WebSocketClient {
-    tx: Sender<Vec<u8>>,
+    tx: Sender<String>,
 }
 
 impl qws::Handler for WebSocketClient {
     fn on_message(&mut self, msg: qws::Message) -> qws::Result<()> {
-        if let qws::Message::Binary(data) = msg {
+        if let qws::Message::Text(data) = msg {
             self.tx.send(data);
         }
         Ok(())
@@ -36,7 +34,6 @@ impl qws::Handler for WebSocketClient {
 impl WebSocketAdapter {
     pub fn new() -> WebSocketAdapter {
         WebSocketAdapter {
-            cid: 0,
             on_connected: None,
             on_closed: None,
             on_received: None,
@@ -80,7 +77,7 @@ impl SocketAdapter for WebSocketAdapter {
 
     fn on_received<T>(&mut self, callback: T)
     where
-        T: Fn(Result<Vec<u8>, WebSocketError>) + 'static,
+        T: Fn(Result<String, WebSocketError>) + 'static,
     {
         self.on_received = Some(Box::new(callback));
     }
@@ -116,17 +113,18 @@ impl SocketAdapter for WebSocketAdapter {
         // Todo keep sender
         self.sender = rx_init.recv().ok();
 
-        self.cid = 0;
         self.rx = Some(rx);
     }
 
-    fn send(&mut self, data: &[u8], reliable: bool) {
+    fn send(&self, data: &str, reliable: bool) {
         if let Some(ref sender) = self.sender {
-            sender.send(qws::Message::Binary(data.to_owned()));
+            println!("Sending {:?}", data);
+            let result = sender.send(qws::Message::Text(data.to_owned()));
+            println!("Result {:?}", result);
         }
     }
 
-    fn tick(&mut self) {
+    fn tick(&self) {
         if let Some(ref rx) = self.rx {
             while let Ok(data) = rx.try_recv() {
                 if let Some(ref cb) = self.on_received {
@@ -167,7 +165,7 @@ mod test {
         sleep(Duration::from_secs(1));
 
         println!("Sending!");
-        socket_adapter.send(&[1, 2, 3, 4], false);
+        socket_adapter.send("Hello", false);
         sleep(Duration::from_secs(1));
         println!("Tick!");
         socket_adapter.tick();

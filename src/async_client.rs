@@ -66,11 +66,11 @@ impl<T: nanoserde::DeJson> AsyncRequest<T> {
     }
 
     pub fn try_recv(&mut self) -> Option<Result<T, Error>> {
-        if let Some(response) = self.request.try_recv() {
-            return Some(response.map_err(|err| err.into()).and_then(|response| {
-                nanoserde::DeJson::deserialize_json(&response).map_err(|err| err.into())
-            }));
-        }
+        // if let Some(response) = self.request.try_recv() {
+        //     return Some(response.map_err(|err| err.into()).and_then(|response| {
+        //         nanoserde::DeJson::deserialize_json(&response).map_err(|err| err.into())
+        //     }));
+        // }
 
         None
     }

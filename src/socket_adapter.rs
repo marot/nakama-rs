@@ -13,7 +13,7 @@ pub trait SocketAdapter {
     // TODO: correct error type
     fn on_received<T>(&mut self, callback: T)
     where
-        T: Fn(Result<Vec<u8>, Self::Error>) + 'static;
+        T: Fn(Result<String, Self::Error>) + 'static;
 
     fn is_connected(&self) -> bool;
     fn is_connecting(&self) -> bool;
@@ -22,7 +22,7 @@ pub trait SocketAdapter {
 
     fn connect(&mut self, addr: &str, timeout: i32);
 
-    fn send(&mut self, data: &[u8], reliable: bool);
+    fn send(&self, data: &str, reliable: bool);
 
-    fn tick(&mut self);
+    fn tick(&self);
 }
