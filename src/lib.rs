@@ -11,6 +11,7 @@ pub mod matchmaker;
 pub mod session;
 pub mod socket;
 pub mod socket_adapter;
+pub mod web_socket;
 pub mod web_socket_adapter;
 
 pub mod api {

@@ -1,7 +1,8 @@
 use std::error::Error;
 use std::net::ToSocketAddrs;
 
-pub trait SocketAdapter<E: Error> {
+pub trait SocketAdapter {
+    type Error: Error;
     fn on_connected<T>(&mut self, callback: T)
     where
         T: Fn() + 'static;
@@ -12,7 +13,7 @@ pub trait SocketAdapter<E: Error> {
     // TODO: correct error type
     fn on_received<T>(&mut self, callback: T)
     where
-        T: Fn(Result<Vec<u8>, E>) + 'static;
+        T: Fn(Result<Vec<u8>, Self::Error>) + 'static;
 
     fn is_connected(&self) -> bool;
     fn is_connecting(&self) -> bool;

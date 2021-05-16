@@ -1,41 +1,44 @@
 use crate::api::{ApiAccountDevice, ApiSessionRefreshRequest};
 use crate::api_gen;
 use crate::api_gen::{ApiAccount, ApiSession};
-use crate::http_adapter::HttpAdapter;
+use crate::client::DefaultClientError::HttpAdapterError;
+use crate::http_adapter::{HttpAdapter, RestHttpError};
 use crate::session::Session;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt::{Debug, Display, Formatter};
 
 #[async_trait(?Send)]
-pub trait Client<E: Error> {
+pub trait Client {
+    type Error: Error;
     async fn authenticate_device(
         &self,
         id: &str,
         username: Option<&str>,
         create: bool,
         vars: HashMap<String, String>,
-    ) -> Result<Session, E>;
+    ) -> Result<Session, Self::Error>;
 
-    async fn add_friend_by_ids(&self, session: &mut Session, ids: &[&str]) -> Result<(), E>;
+    async fn add_friend_by_ids(
+        &self,
+        session: &mut Session,
+        ids: &[&str],
+    ) -> Result<(), Self::Error>;
 
-    async fn get_account(&self, session: &mut Session) -> Result<ApiAccount, E>;
+    async fn get_account(&self, session: &mut Session) -> Result<ApiAccount, Self::Error>;
 }
 
-pub struct DefaultClient<A: HttpAdapter<E>, E: Error> {
+pub struct DefaultClient<A: HttpAdapter> {
     adapter: A,
-    _marker: std::marker::PhantomData<E>,
 }
 
-impl<A: HttpAdapter<E>, E: Error> DefaultClient<A, E> {
-    pub fn new(adapter: A) -> DefaultClient<A, E> {
-        DefaultClient {
-            adapter,
-            _marker: std::marker::PhantomData,
-        }
+impl<A: HttpAdapter> DefaultClient<A> {
+    pub fn new(adapter: A) -> DefaultClient<A> {
+        DefaultClient { adapter }
     }
 
-    async fn refresh_session(&self, session: &mut Session) -> Result<(), E> {
+    async fn refresh_session(&self, session: &mut Session) -> Result<(), A::Error> {
         // TODO: check expiration
         if let Some(refresh_token) = session.refresh_token.take() {
             let request = api_gen::session_refresh(
@@ -63,15 +66,39 @@ impl<A: HttpAdapter<E>, E: Error> DefaultClient<A, E> {
     }
 }
 
+pub enum DefaultClientError<A: HttpAdapter> {
+    HttpAdapterError(A::Error),
+    ClientError(String),
+}
+
+impl<A: HttpAdapter> Debug for DefaultClientError<A> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HttpAdapterError(err) => std::fmt::Debug::fmt(err, f),
+            DefaultClientError::ClientError(err) => std::fmt::Debug::fmt(err, f),
+        }
+    }
+}
+
+impl<A: HttpAdapter> Display for DefaultClientError<A> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(self, f)
+    }
+}
+
+impl<A: HttpAdapter> Error for DefaultClientError<A> {}
+
 #[async_trait(?Send)]
-impl<A: HttpAdapter<E>, E: Error> Client<E> for DefaultClient<A, E> {
+impl<A: HttpAdapter> Client for DefaultClient<A> {
+    type Error = DefaultClientError<A>;
+
     async fn authenticate_device(
         &self,
         id: &str,
         username: Option<&str>,
         create: bool,
         vars: HashMap<String, String>,
-    ) -> Result<Session, E> {
+    ) -> Result<Session, Self::Error> {
         let request = api_gen::authenticate_device(
             "defaultkey",
             "",
@@ -84,26 +111,38 @@ impl<A: HttpAdapter<E>, E: Error> Client<E> for DefaultClient<A, E> {
         );
 
         let response = self.adapter.send(request).await;
-        response.map(|api_session| Session {
-            auth_token: api_session.token,
-            refresh_token: if api_session.refresh_token.len() == 0 {
-                None
-            } else {
-                Some(api_session.refresh_token)
-            },
-        })
+        response
+            .map(|api_session| Session {
+                auth_token: api_session.token,
+                refresh_token: if api_session.refresh_token.len() == 0 {
+                    None
+                } else {
+                    Some(api_session.refresh_token)
+                },
+            })
+            .map_err(|err| HttpAdapterError(err))
     }
 
-    async fn add_friend_by_ids(&self, session: &mut Session, ids: &[&str]) -> Result<(), E> {
+    async fn add_friend_by_ids(
+        &self,
+        session: &mut Session,
+        ids: &[&str],
+    ) -> Result<(), Self::Error> {
         let ids: Vec<String> = ids.iter().map(|id| (*id).to_owned()).collect();
         let request = api_gen::add_friends(&session.auth_token, &ids, &[]);
 
-        self.adapter.send(request).await
+        self.adapter
+            .send(request)
+            .await
+            .map_err(|err| DefaultClientError::HttpAdapterError(err))
     }
 
-    async fn get_account(&self, session: &mut Session) -> Result<ApiAccount, E> {
+    async fn get_account(&self, session: &mut Session) -> Result<ApiAccount, Self::Error> {
         let request = api_gen::get_account(&session.auth_token);
-        self.adapter.send(request).await
+        self.adapter
+            .send(request)
+            .await
+            .map_err(|err| DefaultClientError::HttpAdapterError(err))
     }
 }
 

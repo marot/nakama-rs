@@ -1,16 +1,30 @@
+use crate::api::ApiChannelMessage;
+use crate::session::Session;
 use crate::socket_adapter::SocketAdapter;
-use std::error::Error;
+use async_trait::async_trait;
 
-struct Socket<A: SocketAdapter<E>, E: Error> {
-    pub adapter: A,
-    _marker: std::marker::PhantomData<E>,
+pub struct WebSocketMessageEnvelope {
+    pub cid: Option<String>,
 }
 
-impl<A: SocketAdapter<E>, E: Error> Socket<A, E> {
-    fn new(adapter: A) -> Self {
-        Socket {
-            adapter,
-            _marker: std::marker::PhantomData,
-        }
-    }
+#[async_trait(?Send)]
+pub trait Socket {
+    // It would make sense to have a future here
+    fn on_closed<T>(&mut self, callback: T)
+    where
+        T: Fn() + 'static;
+
+    fn on_connected<T>(&mut self, callback: T)
+    where
+        T: Fn() + 'static;
+
+    fn on_received_channel_message<T>(&mut self, callback: T)
+    where
+        T: Fn(ApiChannelMessage) + 'static;
+
+    async fn connect(&mut self, session: &mut Session, appear_online: bool, connect_timeout: i32);
+
+    async fn close(&mut self);
+
+    async fn create_match(&mut self);
 }

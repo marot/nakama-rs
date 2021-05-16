@@ -8,7 +8,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{mpsc, Arc, Mutex};
 use std::task::{Context, Poll};
 
-struct WebSocketAdapter {
+pub struct WebSocketAdapter {
     cid: u32,
 
     on_connected: Option<Box<dyn Fn() + 'static>>,
@@ -48,7 +48,7 @@ impl WebSocketAdapter {
 }
 
 #[derive(Debug)]
-enum WebSocketError {
+pub enum WebSocketError {
     IOError,
     WSError,
 }
@@ -61,7 +61,9 @@ impl Display for WebSocketError {
 
 impl Error for WebSocketError {}
 
-impl SocketAdapter<WebSocketError> for WebSocketAdapter {
+impl SocketAdapter for WebSocketAdapter {
+    type Error = WebSocketError;
+
     fn on_connected<T>(&mut self, callback: T)
     where
         T: Fn() + 'static,

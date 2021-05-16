@@ -11,9 +11,10 @@ use futures::TryFutureExt;
 use nanoserde::{DeJson, DeJsonErr};
 
 #[async_trait(?Send)]
-pub trait HttpAdapter<E: Error> {
+pub trait HttpAdapter {
+    type Error: Error;
     // TODO: Correct error type
-    async fn send<T: DeJson>(&self, request: RestRequest<T>) -> Result<T, E>;
+    async fn send<T: DeJson>(&self, request: RestRequest<T>) -> Result<T, Self::Error>;
     // where
     //     T: 'async_trait;
 }
@@ -47,7 +48,8 @@ impl RestHttpAdapter {
 }
 
 #[async_trait(?Send)]
-impl HttpAdapter<RestHttpError> for RestHttpAdapter {
+impl HttpAdapter for RestHttpAdapter {
+    type Error = RestHttpError;
     async fn send<T: DeJson>(&self, request: RestRequest<T>) -> Result<T, RestHttpError>
 // where
     //     T: 'async_trait,
