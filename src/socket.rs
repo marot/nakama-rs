@@ -13,12 +13,32 @@ pub struct Match {
     match_id: String,
 }
 
+#[derive(DeJson, SerJson, Debug, Clone, Default)]
+pub struct Channel {
+    id: String,
+    // presences
+    // self
+    room_name: String,
+    group_id: String,
+    user_id_one: String,
+    user_id_two: String,
+}
+
+#[derive(DeJson, SerJson, Debug, Clone, Default)]
+pub struct ChannelJoinMessage {
+    pub hidden: bool,
+    pub persistence: bool,
+    pub target: String,
+    #[nserde(rename = "channel")]
+    pub channel_type: i32,
+}
+
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct WebSocketMessageEnvelope {
     pub cid: Option<String>,
-    // pub channel: Option<Channel>,
-    // pub channel_join: Option<ChannelJoinMessage>,
+    pub channel: Option<Channel>,
+    pub channel_join: Option<ChannelJoinMessage>,
     // pub channel_leave: Option<ChannelLeaveMessage>,
     // pub channel_message: Option<ApiChannelMessage>,
     // pub channel_message_ack: Option<ChannelMessageAck>,
@@ -87,4 +107,6 @@ pub trait Socket {
     async fn close(&mut self);
 
     async fn create_match(&self) -> Match;
+
+    async fn join_chat(&self, room_name: &str, channel_type: i32, persistence: bool, hidden: bool) -> Channel;
 }

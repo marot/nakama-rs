@@ -1,6 +1,6 @@
 use crate::api::{ApiChannelMessage, ApiNotificationList, ApiRpc};
 use crate::session::Session;
-use crate::socket::{Socket, WebSocketMessageEnvelope, MatchCreate, Match};
+use crate::socket::{Socket, WebSocketMessageEnvelope, MatchCreate, Match, Channel, ChannelJoinMessage};
 use crate::socket_adapter::SocketAdapter;
 use async_trait::async_trait;
 use std::error::Error;
@@ -56,10 +56,10 @@ impl<A: SocketAdapter> WebSocket<A> {
         };
 
         adapter.adapter.on_received({
-            let shared_state = adapter.shared_state.clone();
+            let mut shared_state = adapter.shared_state.clone();
             move |msg| {
-                let msg = msg.unwrap();
                 println!("Msg: {:?}", msg);
+                let msg = msg.unwrap();
                 let event: WebSocketMessageEnvelope = DeJson::deserialize_json(&msg).unwrap();
 
                 if let Some(ref cid) = event.cid {
@@ -78,6 +78,23 @@ impl<A: SocketAdapter> WebSocket<A> {
 
     fn tick(&self) {
         self.adapter.tick();
+    }
+
+    fn make_envelope_with_cid(&self) -> (WebSocketMessageEnvelope, i64) {
+        self.shared_state.borrow_mut().cid += 1;
+        let cid = self.shared_state.borrow().cid;
+
+        (WebSocketMessageEnvelope {
+            cid: Some(cid.to_string()),
+            ..Default::default()
+        }, cid)
+    }
+
+    async fn wait_response(&self, cid: i64) -> WebSocketMessageEnvelope {
+        WebSocketFuture {
+            shared_state: self.shared_state.clone(),
+            cid,
+        }.await
     }
 }
 
@@ -139,6 +156,22 @@ impl<A: SocketAdapter> Socket for WebSocket<A> {
 
         envelope.new_match.unwrap()
     }
+
+    async fn join_chat(&self, room_name: &str, channel_type: i32, persistence: bool, hidden: bool) -> Channel {
+        let (mut envelope, cid) = self.make_envelope_with_cid();
+        envelope.channel_join = Some(ChannelJoinMessage {
+            channel_type,
+            hidden,
+            persistence,
+            target: room_name.to_owned(),
+        });
+
+        let json = envelope.serialize_json();
+        self.adapter.send(&json, false);
+
+        let result_envelope = self.wait_response(cid).await;
+        result_envelope.channel.unwrap()
+    }
 }
 
 #[cfg(test)]
@@ -158,11 +191,17 @@ mod test {
         Delay::new(Duration::from_millis(500)).await;
         web_socket.tick();
         Delay::new(Duration::from_millis(500)).await;
+        web_socket.tick();
+        Delay::new(Duration::from_millis(500)).await;
+        web_socket.tick();
+        Delay::new(Duration::from_millis(500)).await;
+        web_socket.tick();
+        Delay::new(Duration::from_millis(500)).await;
     }
 
     #[test]
     fn test() {
-        SimpleLogger::new().init().unwrap();
+        // SimpleLogger::new().init().unwrap();
         let http_adapter = RestHttpAdapter::new("http://127.0.0.1", 7350);
         let client = DefaultClient::new(http_adapter);
         let adapter = WebSocketAdapter::new();
@@ -181,7 +220,8 @@ mod test {
 
             sleep(Duration::from_secs(2));
 
-            let a = web_socket.create_match();
+            let a = web_socket.join_chat("MyRoom", 1, false, false);
+            // let a = web_socket.create_match();
             let b = tick(&web_socket);
 
             pin_mut!(a);
@@ -189,7 +229,7 @@ mod test {
 
             match select(a, b).await {
                 Either::Left((value1, _)) => {
-                    println!("Match: {:?}", value1);
+                    println!("Channel: {:?}", value1);
                 },
                 Either::Right(_) => {
                 }
@@ -198,5 +238,28 @@ mod test {
         };
 
         futures::executor::block_on(future);
+    }
+
+    #[derive(SerJson)]
+    struct TestStruct {
+        a: Option<String>,
+        b: Option<String>,
+    }
+    #[test]
+    fn test_serialization() {
+        let test_struct = TestStruct {
+            a: Some("string".to_owned()),
+            b: None,
+        };
+        let test_struct2 = TestStruct {
+            a: None,
+            b: Some("string".to_owned()),
+        };
+        let result = test_struct.serialize_json();
+        let result2 = test_struct2.serialize_json();
+
+        // This one is correct
+        assert_eq!(result2, "{\"b\":\"string\"}");
+        assert_eq!(result, "{\"a\":\"string\"}");
     }
 }

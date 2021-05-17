@@ -10,7 +10,7 @@ description = "Pure rust nakama protocol implementation"
 
 [dependencies]
 base64 = "0.13"
-nanoserde = "0.1"
+nanoserde = "0.1.25"
 async-trait = "0.1.50"
 quad-net = { path = "../quad-net" }
 futures = "0.3.15"
