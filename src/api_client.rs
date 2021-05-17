@@ -160,7 +160,7 @@ impl ApiClient {
         let server_url = state.server_url.as_ref();
         let port = state.port;
 
-        let mut req = crate::async_client::make_request(server_url, port, request);
+        let req = crate::async_client::make_request(server_url, port, request);
         let response = req.request.await;
         response
             .map_err(|err| err.into())

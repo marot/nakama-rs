@@ -1,6 +1,5 @@
 use crate::api::ApiChannelMessage;
 use crate::session::Session;
-use crate::socket_adapter::SocketAdapter;
 use async_trait::async_trait;
 use nanoserde::{DeJson, SerJson};
 

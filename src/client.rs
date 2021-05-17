@@ -1,8 +1,8 @@
 use crate::api::{ApiAccountDevice, ApiSessionRefreshRequest};
 use crate::api_gen;
-use crate::api_gen::{ApiAccount, ApiSession};
+use crate::api_gen::{ApiAccount};
 use crate::client::DefaultClientError::HttpAdapterError;
-use crate::http_adapter::{HttpAdapter, RestHttpError};
+use crate::http_adapter::{HttpAdapter};
 use crate::session::Session;
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -38,7 +38,7 @@ impl<A: HttpAdapter> DefaultClient<A> {
         DefaultClient { adapter }
     }
 
-    async fn refresh_session(&self, session: &mut Session) -> Result<(), A::Error> {
+    async fn _refresh_session(&self, session: &mut Session) -> Result<(), A::Error> {
         // TODO: check expiration
         if let Some(refresh_token) = session.refresh_token.take() {
             let request = api_gen::session_refresh(
@@ -154,7 +154,7 @@ mod test {
     #[test]
     fn test() {
         let adapter = RestHttpAdapter::new("http://127.0.0.1", 7350);
-        let mut client = DefaultClient::new(adapter);
+        let client = DefaultClient::new(adapter);
 
         let future = async {
             let mut session = client

@@ -1,18 +1,16 @@
-use crate::api::{ApiChannelMessage, ApiNotificationList, ApiRpc};
+use crate::api::{ApiChannelMessage};
 use crate::session::Session;
 use crate::socket::{Socket, WebSocketMessageEnvelope, MatchCreate, Match, Channel, ChannelJoinMessage};
 use crate::socket_adapter::SocketAdapter;
 use async_trait::async_trait;
-use std::error::Error;
-use std::thread::sleep;
-use std::time::Duration;
-use nanoserde::{DeJson, SerJson};
+use nanoserde::{DeJson, SerJson, DeJsonErr};
 use std::task::{Waker, Context, Poll};
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::future::Future;
 use std::pin::Pin;
+use log::{trace, error};
 
 struct SharedState {
     cid: i64,
@@ -29,6 +27,7 @@ impl Future for WebSocketFuture {
     type Output = WebSocketMessageEnvelope;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        // TODO: timeout
         let mut shared_state = self.shared_state.borrow_mut();
         if let Some(response) = shared_state.responses.remove(&self.cid)  {
             shared_state.wakers.remove(&self.cid);
@@ -45,6 +44,27 @@ struct WebSocket<A: SocketAdapter> {
     shared_state: Rc<RefCell<SharedState>>,
 }
 
+fn handle_message(shared_state: &Rc<RefCell<SharedState>>, msg: &String) {
+    let result: Result<WebSocketMessageEnvelope, DeJsonErr> = DeJson::deserialize_json(&msg);
+    match result {
+        Ok(event) => {
+            if let Some(ref cid) = event.cid {
+                trace!("handle_message: Received message with cid");
+                let mut state = shared_state.borrow_mut();
+                let cid = cid.parse::<i64>().unwrap();
+                state.responses.insert(cid, event);
+                if let Some(waker) = state.wakers.remove(&cid) {
+                    trace!("handle_message: Waking future");
+                    waker.wake();
+                }
+            }
+        }
+        Err(err) => {
+            error!("handle_message: Failed to parse json: {}", err);
+        }
+    }
+}
+
 impl<A: SocketAdapter> WebSocket<A> {
     fn new(adapter: A) -> Self {
         let mut adapter = WebSocket { adapter,
@@ -56,20 +76,19 @@ impl<A: SocketAdapter> WebSocket<A> {
         };
 
         adapter.adapter.on_received({
-            let mut shared_state = adapter.shared_state.clone();
+            let shared_state = adapter.shared_state.clone();
             move |msg| {
-                println!("Msg: {:?}", msg);
-                let msg = msg.unwrap();
-                let event: WebSocketMessageEnvelope = DeJson::deserialize_json(&msg).unwrap();
-
-                if let Some(ref cid) = event.cid {
-                    let mut state = shared_state.borrow_mut();
-                    let cid = cid.parse::<i64>().unwrap();
-                    state.responses.insert(cid, event);
-                    if let Some(waker) = state.wakers.remove(&cid) {
-                        waker.wake();
+                match msg {
+                    Err(error) => {
+                        error!("on_received: {}", error);
+                        return;
+                    },
+                    Ok(msg) => {
+                        trace!("on_received: {}", msg);
+                        handle_message(&shared_state, &msg);
                     }
                 }
+
             }
         });
 
@@ -100,21 +119,21 @@ impl<A: SocketAdapter> WebSocket<A> {
 
 #[async_trait(?Send)]
 impl<A: SocketAdapter> Socket for WebSocket<A> {
-    fn on_closed<T>(&mut self, callback: T)
+    fn on_closed<T>(&mut self, _callback: T)
     where
         T: Fn() + 'static,
     {
         todo!()
     }
 
-    fn on_connected<T>(&mut self, callback: T)
+    fn on_connected<T>(&mut self, _callback: T)
     where
         T: Fn() + 'static,
     {
         todo!()
     }
 
-    fn on_received_channel_message<T>(&mut self, callback: T)
+    fn on_received_channel_message<T>(&mut self, _callback: T)
     where
         T: Fn(ApiChannelMessage) + 'static,
     {
@@ -185,6 +204,8 @@ mod test {
     use futures_timer::Delay;
     use futures::future::{select, Either};
     use futures::pin_mut;
+    use std::time::Duration;
+    use std::thread::sleep;
 
     async fn tick<A: SocketAdapter>(web_socket: &WebSocket<A>) {
         web_socket.tick();
@@ -201,14 +222,14 @@ mod test {
 
     #[test]
     fn test() {
-        // SimpleLogger::new().init().unwrap();
+        SimpleLogger::new().init().unwrap();
         let http_adapter = RestHttpAdapter::new("http://127.0.0.1", 7350);
         let client = DefaultClient::new(http_adapter);
         let adapter = WebSocketAdapter::new();
         let mut web_socket = WebSocket::new(adapter);
 
         let future = async {
-            let mut session = client
+            let session = client
                 .authenticate_device("testdeviceid", None, true, HashMap::new())
                 .await;
             if let Err(ref err) = session {
@@ -220,8 +241,8 @@ mod test {
 
             sleep(Duration::from_secs(2));
 
-            let a = web_socket.join_chat("MyRoom", 1, false, false);
-            // let a = web_socket.create_match();
+            // let a = web_socket.join_chat("MyRoom", 1, false, false);
+            let a = web_socket.create_match();
             let b = tick(&web_socket);
 
             pin_mut!(a);

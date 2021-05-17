@@ -2,11 +2,9 @@ use crate::socket_adapter::SocketAdapter;
 use qws;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::net::ToSocketAddrs;
-use std::pin::Pin;
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::{mpsc, Arc, Mutex};
-use std::task::{Context, Poll};
+use std::sync::{mpsc};
+use log::{trace, error};
 
 pub struct WebSocketAdapter {
     on_connected: Option<Box<dyn Fn() + 'static>>,
@@ -24,8 +22,16 @@ struct WebSocketClient {
 
 impl qws::Handler for WebSocketClient {
     fn on_message(&mut self, msg: qws::Message) -> qws::Result<()> {
-        if let qws::Message::Text(data) = msg {
-            self.tx.send(data);
+        match msg {
+            qws::Message::Text(data) => {
+                let result = self.tx.send(data);
+                if let Err(err) = result {
+                    error!("Handler::on_message: {}", err);
+                }
+            }
+            qws::Message::Binary(_) => {
+                trace!("Handler::on_message: Received binary data");
+            }
         }
         Ok(())
     }
@@ -88,14 +94,13 @@ impl SocketAdapter for WebSocketAdapter {
 
     fn is_connecting(&self) -> bool {
         todo!();
-        false
     }
 
     fn close(&mut self) {
         todo!()
     }
 
-    fn connect(&mut self, addr: &str, timeout: i32) {
+    fn connect(&mut self, addr: &str, _timeout: i32) {
         let (tx, rx) = mpsc::channel();
         let (tx_init, rx_init) = mpsc::channel();
 
@@ -104,7 +109,10 @@ impl SocketAdapter for WebSocketAdapter {
         std::thread::spawn({
             move || {
                 qws::connect(addr, |out| {
-                    tx_init.send(out);
+                    let response = tx_init.send(out);
+                    if let Err(err) = response {
+                        error!("connect (Thread): Error sending data {}", err);
+                    }
                     return WebSocketClient { tx: tx.clone() };
                 })
             }
@@ -116,7 +124,7 @@ impl SocketAdapter for WebSocketAdapter {
         self.rx = Some(rx);
     }
 
-    fn send(&self, data: &str, reliable: bool) {
+    fn send(&self, data: &str, _reliable: bool) {
         if let Some(ref sender) = self.sender {
             println!("Sending {:?}", data);
             let result = sender.send(qws::Message::Text(data.to_owned()));
@@ -142,23 +150,10 @@ mod test {
     use std::thread::sleep;
     use std::time::Duration;
 
-    struct Foo {}
-
-    impl Foo {
-        pub fn new() -> Foo {
-            Foo {}
-        }
-
-        pub fn on_connected(&self) {
-            println!("on_connected");
-        }
-    }
-
     #[test]
     fn test() {
         SimpleLogger::new().init().unwrap();
 
-        let foo = Foo::new();
         let mut socket_adapter = WebSocketAdapter::new();
         socket_adapter.connect("ws://echo.websocket.org", 0);
         socket_adapter.on_received(move |data| println!("{:?}", data));

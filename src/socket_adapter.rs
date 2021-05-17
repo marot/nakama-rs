@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::net::ToSocketAddrs;
 
 pub trait SocketAdapter {
     type Error: Error;

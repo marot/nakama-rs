@@ -2,10 +2,8 @@ use crate::api::RestRequest;
 use quad_net::http_request::{HttpError, Method, RequestBuilder};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::net::ToSocketAddrs;
 
 use crate::api;
-use crate::api_gen;
 use async_trait::async_trait;
 use futures::TryFutureExt;
 use nanoserde::{DeJson, DeJsonErr};
@@ -87,41 +85,5 @@ impl HttpAdapter for RestHttpAdapter {
         let response = request.await?;
         nanoserde::DeJson::deserialize_json(&response)
             .map_err(|json_err| RestHttpError::JsonError(json_err))
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use std::collections::HashMap;
-
-    #[test]
-    fn test() {
-        // let mut a = WebSocketAdapter {};
-        //
-        // let socket = Socket::new(a);
-        //
-        // let mut http = RestHttpAdapter::new("http://127.0.0.1", 7350);
-        //
-        // let request = api_gen::authenticate_device(
-        //     "defaultkey",
-        //     "",
-        //     api::ApiAccountDevice {
-        //         id: "SomeDeviceId".to_owned(),
-        //         vars: HashMap::new(),
-        //     },
-        //     Some(true),
-        //     Some("Marot"),
-        // );
-        //
-        // let future = http.send(request);
-        //
-        // let result = futures::executor::block_on(future);
-        //
-        // println!("Result {:?}", result);
-
-        // a.on_connected(|| {
-        //     println!("Hello World!");
-        // })
     }
 }
