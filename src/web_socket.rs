@@ -1,6 +1,6 @@
 use crate::api::{ApiChannelMessage};
 use crate::session::Session;
-use crate::socket::{Socket, WebSocketMessageEnvelope, MatchCreate, Match, Channel, ChannelJoinMessage};
+use crate::socket::{Socket, WebSocketMessageEnvelope, MatchCreate, Match, Channel, ChannelJoinMessage, ChannelSendMessage};
 use crate::socket_adapter::SocketAdapter;
 use async_trait::async_trait;
 use nanoserde::{DeJson, SerJson, DeJsonErr};
@@ -176,6 +176,22 @@ impl<A: SocketAdapter> Socket for WebSocket<A> {
         envelope.new_match.unwrap()
     }
 
+    async fn write_chat_message(&self, channel_id: &str, content: &str) {
+        let (mut envelope, cid) = self.make_envelope_with_cid();
+        envelope.channel_message_send = Some(ChannelSendMessage {
+            channel_id: channel_id.to_owned(),
+            content: content.to_owned(),
+        });
+
+        let json = envelope.serialize_json();
+        self.adapter.send(&json, false);
+
+        // TODO: Message ack
+        self.wait_response(cid).await;
+        // let result_envelope = self.wait_response(cid).await;
+        // result_envelope.channel.unwrap()
+    }
+
     async fn join_chat(&self, room_name: &str, channel_type: i32, persistence: bool, hidden: bool) -> Channel {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.channel_join = Some(ChannelJoinMessage {
@@ -206,6 +222,7 @@ mod test {
     use futures::pin_mut;
     use std::time::Duration;
     use std::thread::sleep;
+    use log::LevelFilter;
 
     async fn tick<A: SocketAdapter>(web_socket: &WebSocket<A>) {
         web_socket.tick();
@@ -221,28 +238,32 @@ mod test {
     }
 
     #[test]
-    fn test() {
-        SimpleLogger::new().init().unwrap();
+    fn web_socket_test() {
+        SimpleLogger::new()
+            .with_level(LevelFilter::Off)
+            .with_module_level("nakama_rs", LevelFilter::Trace).init().unwrap();
         let http_adapter = RestHttpAdapter::new("http://127.0.0.1", 7350);
         let client = DefaultClient::new(http_adapter);
         let adapter = WebSocketAdapter::new();
+        let adapter2 = WebSocketAdapter::new();
         let mut web_socket = WebSocket::new(adapter);
+        let mut web_socket2 = WebSocket::new(adapter2);
 
         let future = async {
             let session = client
                 .authenticate_device("testdeviceid", None, true, HashMap::new())
                 .await;
-            if let Err(ref err) = session {
-                println!("Error: {:?}", err);
-                return;
-            }
+            let session2 = client.authenticate_device("testdeviceid2", None, true, HashMap::new())
+                .await;
             let mut session = session.unwrap();
+            let mut session2 = session2.unwrap();
             web_socket.connect(&mut session, true, -1).await;
+            web_socket2.connect(&mut session2, true, -1).await;
 
             sleep(Duration::from_secs(2));
 
-            // let a = web_socket.join_chat("MyRoom", 1, false, false);
-            let a = web_socket.create_match();
+            let a = web_socket.join_chat("MyRoom", 1, false, false);
+            // let a = web_socket.create_match();
             let b = tick(&web_socket);
 
             pin_mut!(a);
@@ -251,6 +272,35 @@ mod test {
             match select(a, b).await {
                 Either::Left((value1, _)) => {
                     println!("Channel: {:?}", value1);
+                },
+                Either::Right(_) => {
+                }
+            }
+
+            let a = web_socket2.join_chat("MyRoom", 1, false, false);
+            // let a = web_socket.create_match();
+            let b = tick(&web_socket2);
+
+            pin_mut!(a);
+            pin_mut!(b);
+
+            let channel_id = match select(a, b).await {
+                Either::Left((value1, _)) => {
+                    value1.id
+                },
+                Either::Right(_) => {
+                    "".to_owned()
+                }
+            };
+            let a = web_socket2.write_chat_message(&channel_id, "{\"text\":\"Hello World!\"}");
+            // let a = web_socket.create_match();
+            let b = tick(&web_socket2);
+
+            pin_mut!(a);
+            pin_mut!(b);
+
+            match select(a, b).await {
+                Either::Left(_) => {
                 },
                 Either::Right(_) => {
                 }
@@ -265,22 +315,25 @@ mod test {
     struct TestStruct {
         a: Option<String>,
         b: Option<String>,
+        c: Option<String>,
     }
     #[test]
     fn test_serialization() {
         let test_struct = TestStruct {
             a: Some("string".to_owned()),
-            b: None,
+            b: Some("hello".to_owned()),
+            c: None,
         };
         let test_struct2 = TestStruct {
             a: None,
             b: Some("string".to_owned()),
+            c: Some("hello".to_owned()),
         };
         let result = test_struct.serialize_json();
         let result2 = test_struct2.serialize_json();
 
         // This one is correct
-        assert_eq!(result2, "{\"b\":\"string\"}");
-        assert_eq!(result, "{\"a\":\"string\"}");
+        assert_eq!(result2, "{\"b\":\"string\",\"c\":\"hello\"}");
+        assert_eq!(result, "{\"a\":\"string\",\"b\":\"hello\"}");
     }
 }

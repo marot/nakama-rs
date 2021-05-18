@@ -9,18 +9,18 @@ pub struct MatchCreate {
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Match {
-    match_id: String,
+    pub match_id: String,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Channel {
-    id: String,
+    pub id: String,
     // presences
     // self
-    room_name: String,
-    group_id: String,
-    user_id_one: String,
-    user_id_two: String,
+    pub room_name: Option<String>,
+    pub group_id: Option<String>,
+    pub user_id_one: Option<String>,
+    pub user_id_two: Option<String>,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
@@ -28,10 +28,15 @@ pub struct ChannelJoinMessage {
     pub hidden: bool,
     pub persistence: bool,
     pub target: String,
-    #[nserde(rename = "channel")]
+    #[nserde(rename = "type")]
     pub channel_type: i32,
 }
 
+#[derive(DeJson, SerJson, Debug, Clone, Default)]
+pub struct ChannelSendMessage {
+    pub channel_id: String,
+    pub content: String,
+}
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct WebSocketMessageEnvelope {
@@ -42,7 +47,7 @@ pub struct WebSocketMessageEnvelope {
     // pub channel_message: Option<ApiChannelMessage>,
     // pub channel_message_ack: Option<ChannelMessageAck>,
     // pub channel_message_remove: Option<ChannelRemoveMessage>,
-    // pub channel_message_send: Option<ChannelSendMessage>,
+    pub channel_message_send: Option<ChannelSendMessage>,
     // pub channel_message_update: Option<ChannelUpdateMessage>,
     // pub error: Option<WebSocketErrorMessage>,
     // pub matchmaker_add: Option<MatchmakerAddMessage>,
@@ -106,6 +111,8 @@ pub trait Socket {
     async fn close(&mut self);
 
     async fn create_match(&self) -> Match;
+
+    async fn write_chat_message(&self, channel_id: &str, content: &str);
 
     async fn join_chat(&self, room_name: &str, channel_type: i32, persistence: bool, hidden: bool) -> Channel;
 }
