@@ -4,15 +4,15 @@ pub trait SocketAdapter {
     type Error: Error;
     fn on_connected<T>(&mut self, callback: T)
     where
-        T: Fn() + 'static;
+        T: Fn() + Send + 'static;
     fn on_closed<T>(&mut self, callback: T)
     where
-        T: Fn() + 'static;
+        T: Fn() + Send + 'static;
 
     // TODO: correct error type
     fn on_received<T>(&mut self, callback: T)
     where
-        T: Fn(Result<String, Self::Error>) + 'static;
+        T: Fn(Result<String, Self::Error>) + Send + 'static;
 
     fn is_connected(&self) -> bool;
     fn is_connecting(&self) -> bool;

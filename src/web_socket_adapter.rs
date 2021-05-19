@@ -7,9 +7,9 @@ use std::sync::{mpsc};
 use log::{trace, error};
 
 pub struct WebSocketAdapter {
-    on_connected: Option<Box<dyn Fn() + 'static>>,
-    on_closed: Option<Box<dyn Fn() + 'static>>,
-    on_received: Option<Box<dyn Fn(Result<String, WebSocketError>) + 'static>>,
+    on_connected: Option<Box<dyn Fn() + Send + 'static>>,
+    on_closed: Option<Box<dyn Fn() + Send + 'static>>,
+    on_received: Option<Box<dyn Fn(Result<String, WebSocketError>) + Send + 'static>>,
 
     rx: Option<Receiver<String>>,
     sender: Option<qws::Sender>,
@@ -69,21 +69,21 @@ impl SocketAdapter for WebSocketAdapter {
 
     fn on_connected<T>(&mut self, callback: T)
     where
-        T: Fn() + 'static,
+        T: Fn() + Send + 'static,
     {
         self.on_connected = Some(Box::new(callback));
     }
 
     fn on_closed<T>(&mut self, callback: T)
     where
-        T: Fn() + 'static,
+        T: Fn() + Send + 'static,
     {
         self.on_closed = Some(Box::new(callback))
     }
 
     fn on_received<T>(&mut self, callback: T)
     where
-        T: Fn(Result<String, WebSocketError>) + 'static,
+        T: Fn(Result<String, WebSocketError>) + Send + 'static,
     {
         self.on_received = Some(Box::new(callback));
     }

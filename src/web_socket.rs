@@ -11,6 +11,7 @@ use std::cell::RefCell;
 use std::future::Future;
 use std::pin::Pin;
 use log::{trace, error};
+use std::sync::{Mutex, Arc};
 
 struct SharedState {
     cid: i64,
@@ -19,7 +20,7 @@ struct SharedState {
 }
 
 struct WebSocketFuture {
-    shared_state: Rc<RefCell<SharedState>>,
+    shared_state: Arc<Mutex<SharedState>>,
     cid: i64,
 }
 
@@ -28,29 +29,38 @@ impl Future for WebSocketFuture {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         // TODO: timeout
-        let mut shared_state = self.shared_state.borrow_mut();
-        if let Some(response) = shared_state.responses.remove(&self.cid)  {
-            shared_state.wakers.remove(&self.cid);
+        let mut state = self.shared_state.lock().expect("Panic inside other mutex!");
+        if let Some(response) = state.responses.remove(&self.cid)  {
+            state.wakers.remove(&self.cid);
             return Poll::Ready(response)
         }
 
-        shared_state.wakers.insert(self.cid, cx.waker().clone());
+        state.wakers.insert(self.cid, cx.waker().clone());
         Poll::Pending
     }
 }
 
 struct WebSocket<A: SocketAdapter> {
-    pub adapter: A,
-    shared_state: Rc<RefCell<SharedState>>,
+    pub adapter: Arc<Mutex<A>>,
+    shared_state: Arc<Mutex<SharedState>>,
 }
 
-fn handle_message(shared_state: &Rc<RefCell<SharedState>>, msg: &String) {
+impl<A: SocketAdapter> Clone for WebSocket<A> {
+    fn clone(&self) -> Self {
+        WebSocket {
+            adapter: self.adapter.clone(),
+            shared_state: self.shared_state.clone(),
+        }
+    }
+}
+
+fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
     let result: Result<WebSocketMessageEnvelope, DeJsonErr> = DeJson::deserialize_json(&msg);
     match result {
         Ok(event) => {
             if let Some(ref cid) = event.cid {
                 trace!("handle_message: Received message with cid");
-                let mut state = shared_state.borrow_mut();
+                let mut state = shared_state.lock().expect("Panic inside other mutex!");
                 let cid = cid.parse::<i64>().unwrap();
                 state.responses.insert(cid, event);
                 if let Some(waker) = state.wakers.remove(&cid) {
@@ -67,16 +77,18 @@ fn handle_message(shared_state: &Rc<RefCell<SharedState>>, msg: &String) {
 
 impl<A: SocketAdapter> WebSocket<A> {
     fn new(adapter: A) -> Self {
-        let mut adapter = WebSocket { adapter,
-        shared_state: Rc::new(RefCell::new(SharedState {
+        let mut web_socket = WebSocket {
+            adapter: Arc::new(Mutex::new(adapter)),
+        shared_state: Arc::new(Mutex::new(SharedState {
             cid: 1,
             wakers: HashMap::new(),
             responses: HashMap::new(),
         }))
         };
 
-        adapter.adapter.on_received({
-            let shared_state = adapter.shared_state.clone();
+        web_socket.adapter.lock().expect("panic inside other mutex!").
+        on_received({
+            let shared_state = web_socket.shared_state.clone();
             move |msg| {
                 match msg {
                     Err(error) => {
@@ -92,16 +104,19 @@ impl<A: SocketAdapter> WebSocket<A> {
             }
         });
 
-        adapter
+        web_socket
     }
 
     fn tick(&self) {
-        self.adapter.tick();
+        self.adapter.lock().expect("panic inside other mutex!").tick();
     }
 
     fn make_envelope_with_cid(&self) -> (WebSocketMessageEnvelope, i64) {
-        self.shared_state.borrow_mut().cid += 1;
-        let cid = self.shared_state.borrow().cid;
+        let cid = {
+            let mut state = self.shared_state.lock().expect("Panic inside other mutex!");
+            state.cid += 1;
+            state.cid
+        };
 
         (WebSocketMessageEnvelope {
             cid: Some(cid.to_string()),
@@ -117,8 +132,8 @@ impl<A: SocketAdapter> WebSocket<A> {
     }
 }
 
-#[async_trait(?Send)]
-impl<A: SocketAdapter> Socket for WebSocket<A> {
+#[async_trait]
+impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     fn on_closed<T>(&mut self, _callback: T)
     where
         T: Fn() + 'static,
@@ -149,7 +164,7 @@ impl<A: SocketAdapter> Socket for WebSocket<A> {
             ws_url, port, appear_online, session.auth_token,
         );
 
-        self.adapter.connect(&ws_addr, connect_timeout);
+        self.adapter.lock().unwrap().connect(&ws_addr, connect_timeout);
     }
 
     async fn close(&mut self) {
@@ -157,16 +172,11 @@ impl<A: SocketAdapter> Socket for WebSocket<A> {
     }
 
     async fn create_match(&self) -> Match {
-        self.shared_state.borrow_mut().cid += 1;
-        let cid = self.shared_state.borrow().cid;
-        let envelope = WebSocketMessageEnvelope {
-            cid: Some(cid.to_string()),
-            match_create: Some(MatchCreate {}),
-            ..Default::default()
-        };
+        let (mut envelope, cid) = self.make_envelope_with_cid();
+        envelope.match_create = Some(MatchCreate {});
 
         let json = envelope.serialize_json();
-        self.adapter.send(&json, false);
+        self.adapter.lock().unwrap().send(&json, false);
 
         let envelope = WebSocketFuture {
             shared_state: self.shared_state.clone(),
@@ -184,7 +194,7 @@ impl<A: SocketAdapter> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.adapter.send(&json, false);
+        self.adapter.lock().unwrap().send(&json, false);
 
         // TODO: Message ack
         self.wait_response(cid).await;
@@ -202,7 +212,7 @@ impl<A: SocketAdapter> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.adapter.send(&json, false);
+        self.adapter.lock().unwrap().send(&json, false);
 
         let result_envelope = self.wait_response(cid).await;
         result_envelope.channel.unwrap()
@@ -221,8 +231,10 @@ mod test {
     use futures::future::{select, Either};
     use futures::pin_mut;
     use std::time::Duration;
-    use std::thread::sleep;
+    use std::thread::{sleep, JoinHandle};
     use log::LevelFilter;
+    use futures::executor::block_on;
+    use std::sync::mpsc::{Sender, channel, RecvError};
 
     async fn tick<A: SocketAdapter>(web_socket: &WebSocket<A>) {
         web_socket.tick();
@@ -237,6 +249,33 @@ mod test {
         Delay::new(Duration::from_millis(500)).await;
     }
 
+    fn spawn_network_thread() -> (Sender<Pin<Box<dyn Future<Output=()> + Send>>>, Sender<()>) {
+        let (tx, rx) = channel::<Pin<Box<dyn Future<Output=()> + Send>>>();
+        let (tx_kill, rx_kill) = channel::<()>();
+        std::thread::spawn({
+            move || {
+                loop {
+                    let future = rx.try_recv();
+                    match future {
+                        Ok(future) => {
+                            block_on(future);
+                        }
+                        Err(_) => {}
+                    }
+
+                    let kill = rx_kill.try_recv();
+                    if kill.is_ok() {
+                        return;
+                    }
+
+                    sleep(Duration::from_millis(100));
+                }
+            }
+        });
+
+        (tx, tx_kill)
+    }
+
     #[test]
     fn web_socket_test() {
         SimpleLogger::new()
@@ -249,66 +288,58 @@ mod test {
         let mut web_socket = WebSocket::new(adapter);
         let mut web_socket2 = WebSocket::new(adapter2);
 
-        let future = async {
-            let session = client
-                .authenticate_device("testdeviceid", None, true, HashMap::new())
-                .await;
-            let session2 = client.authenticate_device("testdeviceid2", None, true, HashMap::new())
-                .await;
-            let mut session = session.unwrap();
-            let mut session2 = session2.unwrap();
-            web_socket.connect(&mut session, true, -1).await;
-            web_socket2.connect(&mut session2, true, -1).await;
+        let (send_futures, send_kill) = spawn_network_thread();
 
-            sleep(Duration::from_secs(2));
+        let mut sockets = (web_socket, web_socket2);
 
-            let a = web_socket.join_chat("MyRoom", 1, false, false);
-            // let a = web_socket.create_match();
-            let b = tick(&web_socket);
+        let setup = {
+            let mut sockets = sockets.clone();
+            async move {
+                let session = client
+                    .authenticate_device("testdeviceid", None, true, HashMap::new())
+                    .await;
+                let session2 = client.authenticate_device("testdeviceid2", None, true, HashMap::new())
+                    .await;
+                let mut session = session.unwrap();
+                let mut session2 = session2.unwrap();
+                sockets.0.connect(&mut session, true, -1).await;
+                sockets.1.connect(&mut session2, true, -1).await;
 
-            pin_mut!(a);
-            pin_mut!(b);
-
-            match select(a, b).await {
-                Either::Left((value1, _)) => {
-                    println!("Channel: {:?}", value1);
-                },
-                Either::Right(_) => {
-                }
+                // Wait for connection
+                sleep(Duration::from_secs(2));
             }
-
-            let a = web_socket2.join_chat("MyRoom", 1, false, false);
-            // let a = web_socket.create_match();
-            let b = tick(&web_socket2);
-
-            pin_mut!(a);
-            pin_mut!(b);
-
-            let channel_id = match select(a, b).await {
-                Either::Left((value1, _)) => {
-                    value1.id
-                },
-                Either::Right(_) => {
-                    "".to_owned()
-                }
-            };
-            let a = web_socket2.write_chat_message(&channel_id, "{\"text\":\"Hello World!\"}");
-            // let a = web_socket.create_match();
-            let b = tick(&web_socket2);
-
-            pin_mut!(a);
-            pin_mut!(b);
-
-            match select(a, b).await {
-                Either::Left(_) => {
-                },
-                Either::Right(_) => {
-                }
-            }
-            sleep(Duration::from_secs(1));
         };
 
-        futures::executor::block_on(future);
+        block_on(setup);
+
+        let do_some_chatting = Box::pin({
+            let sockets = sockets.clone();
+            async move {
+                sockets.0.join_chat("MyRoom", 1, false, false).await;
+                let channel = sockets.1.join_chat("MyRoom", 1, false, false).await;
+                sockets.1.write_chat_message(&channel.id, "{\"text\":\"Hello World!\"}").await;
+            }
+        });
+
+        send_futures.send(do_some_chatting);
+
+        // let join_handle = std::thread::spawn({
+        //     move || {
+        //         futures::executor::block_on(do_some_chatting);
+        //     }
+        // });
+
+        let mut total_time = 0;
+        while total_time < 5 * 1000 {
+            sockets.0.tick();
+            sockets.1.tick();
+            sleep(Duration::from_millis(60));
+            total_time += 60;
+        }
+
+
+        send_kill.send(());
+        // join_handle.join();
     }
 
     #[derive(SerJson)]

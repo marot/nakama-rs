@@ -91,7 +91,7 @@ pub struct WebSocketMessageEnvelope {
 }
 
 
-#[async_trait(?Send)]
+#[async_trait]
 pub trait Socket {
     // It would make sense to have a future here
     fn on_closed<T>(&mut self, callback: T)

@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
-#[async_trait(?Send)]
+#[async_trait]
 pub trait Client {
     type Error: Error;
     async fn authenticate_device(
@@ -88,8 +88,8 @@ impl<A: HttpAdapter> Display for DefaultClientError<A> {
 
 impl<A: HttpAdapter> Error for DefaultClientError<A> {}
 
-#[async_trait(?Send)]
-impl<A: HttpAdapter> Client for DefaultClient<A> {
+#[async_trait]
+impl<A: HttpAdapter + Sync + Send> Client for DefaultClient<A> {
     type Error = DefaultClientError<A>;
 
     async fn authenticate_device(
