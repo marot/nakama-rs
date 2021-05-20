@@ -1,4 +1,4 @@
-use crate::api::{ApiAccountDevice, ApiSessionRefreshRequest};
+use crate::api::{ApiAccountDevice, ApiSessionRefreshRequest, RestRequest};
 use crate::api_gen;
 use crate::api_gen::ApiAccount;
 use crate::client::DefaultClientError::HttpAdapterError;
@@ -8,6 +8,7 @@ use async_trait::async_trait;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
+use nanoserde::DeJson;
 
 #[async_trait]
 pub trait Client {
@@ -38,6 +39,11 @@ impl<A: ClientAdapter> DefaultClient<A> {
         DefaultClient { adapter }
     }
 
+    #[inline]
+    async fn send<T: DeJson + Send>(&self, request: RestRequest<T>) -> Result<T, A::Error> {
+       self.adapter.send(request).await
+    }
+
     async fn _refresh_session(&self, session: &mut Session) -> Result<(), A::Error> {
         // TODO: check expiration
         if let Some(refresh_token) = session.refresh_token.take() {
@@ -50,7 +56,7 @@ impl<A: ClientAdapter> DefaultClient<A> {
                 },
             );
 
-            let sess = self.adapter.send(request).await;
+            let sess = self.send(request).await;
             let result = sess.map(|s| {
                 session.auth_token = s.token;
                 session.refresh_token = if s.refresh_token.len() == 0 {
@@ -110,7 +116,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
             username,
         );
 
-        let response = self.adapter.send(request).await;
+        let response = self.send(request).await;
         response
             .map(|api_session| Session {
                 auth_token: api_session.token,
@@ -131,7 +137,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         let ids: Vec<String> = ids.iter().map(|id| (*id).to_owned()).collect();
         let request = api_gen::add_friends(&session.auth_token, &ids, &[]);
 
-        self.adapter
+        self
             .send(request)
             .await
             .map_err(|err| DefaultClientError::HttpAdapterError(err))
@@ -139,7 +145,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn get_account(&self, session: &mut Session) -> Result<ApiAccount, Self::Error> {
         let request = api_gen::get_account(&session.auth_token);
-        self.adapter
+        self
             .send(request)
             .await
             .map_err(|err| DefaultClientError::HttpAdapterError(err))

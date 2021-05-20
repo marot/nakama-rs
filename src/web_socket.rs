@@ -131,6 +131,12 @@ impl<A: SocketAdapter> WebSocket<A> {
         )
     }
 
+    #[inline]
+    async fn send(&self, data: &str, reliable: bool) {
+        self.adapter.lock().expect("panic inside other mutex!")
+            .send(data, reliable);
+    }
+
     async fn wait_response(&self, cid: i64) -> WebSocketMessageEnvelope {
         WebSocketFuture {
             shared_state: self.shared_state.clone(),
@@ -187,7 +193,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         envelope.match_create = Some(MatchCreate {});
 
         let json = envelope.serialize_json();
-        self.adapter.lock().unwrap().send(&json, false);
+        self.send(&json, false);
 
         let envelope = WebSocketFuture {
             shared_state: self.shared_state.clone(),
@@ -206,7 +212,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.adapter.lock().unwrap().send(&json, false);
+        self.send(&json, false);
 
         // TODO: Message ack
         self.wait_response(cid).await;
@@ -230,7 +236,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.adapter.lock().unwrap().send(&json, false);
+        self.send(&json, false);
 
         let result_envelope = self.wait_response(cid).await;
         result_envelope.channel.unwrap()
