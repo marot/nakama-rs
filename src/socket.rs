@@ -4,8 +4,7 @@ use async_trait::async_trait;
 use nanoserde::{DeJson, SerJson};
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
-pub struct MatchCreate {
-}
+pub struct MatchCreate {}
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Match {
@@ -90,7 +89,6 @@ pub struct WebSocketMessageEnvelope {
     // pub party_presence_event: Option<PartyPresenceEvent>,
 }
 
-
 #[async_trait]
 pub trait Socket {
     // It would make sense to have a future here
@@ -106,13 +104,19 @@ pub trait Socket {
     where
         T: Fn(ApiChannelMessage) + 'static;
 
-    async fn connect(&mut self, session: &mut Session, appear_online: bool, connect_timeout: i32);
+    async fn connect(&self, session: &mut Session, appear_online: bool, connect_timeout: i32);
 
-    async fn close(&mut self);
+    async fn close(&self);
 
     async fn create_match(&self) -> Match;
 
     async fn write_chat_message(&self, channel_id: &str, content: &str);
 
-    async fn join_chat(&self, room_name: &str, channel_type: i32, persistence: bool, hidden: bool) -> Channel;
+    async fn join_chat(
+        &self,
+        room_name: &str,
+        channel_type: i32,
+        persistence: bool,
+        hidden: bool,
+    ) -> Channel;
 }

@@ -1,8 +1,8 @@
 use crate::api::{ApiAccountDevice, ApiSessionRefreshRequest};
 use crate::api_gen;
-use crate::api_gen::{ApiAccount};
+use crate::api_gen::ApiAccount;
 use crate::client::DefaultClientError::HttpAdapterError;
-use crate::http_adapter::{HttpAdapter};
+use crate::http_adapter::ClientAdapter;
 use crate::session::Session;
 use async_trait::async_trait;
 use std::collections::HashMap;
@@ -29,11 +29,11 @@ pub trait Client {
     async fn get_account(&self, session: &mut Session) -> Result<ApiAccount, Self::Error>;
 }
 
-pub struct DefaultClient<A: HttpAdapter> {
+pub struct DefaultClient<A: ClientAdapter> {
     adapter: A,
 }
 
-impl<A: HttpAdapter> DefaultClient<A> {
+impl<A: ClientAdapter> DefaultClient<A> {
     pub fn new(adapter: A) -> DefaultClient<A> {
         DefaultClient { adapter }
     }
@@ -66,12 +66,12 @@ impl<A: HttpAdapter> DefaultClient<A> {
     }
 }
 
-pub enum DefaultClientError<A: HttpAdapter> {
+pub enum DefaultClientError<A: ClientAdapter> {
     HttpAdapterError(A::Error),
     ClientError(String),
 }
 
-impl<A: HttpAdapter> Debug for DefaultClientError<A> {
+impl<A: ClientAdapter> Debug for DefaultClientError<A> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             HttpAdapterError(err) => std::fmt::Debug::fmt(err, f),
@@ -80,16 +80,16 @@ impl<A: HttpAdapter> Debug for DefaultClientError<A> {
     }
 }
 
-impl<A: HttpAdapter> Display for DefaultClientError<A> {
+impl<A: ClientAdapter> Display for DefaultClientError<A> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         std::fmt::Debug::fmt(self, f)
     }
 }
 
-impl<A: HttpAdapter> Error for DefaultClientError<A> {}
+impl<A: ClientAdapter> Error for DefaultClientError<A> {}
 
 #[async_trait]
-impl<A: HttpAdapter + Sync + Send> Client for DefaultClient<A> {
+impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
     type Error = DefaultClientError<A>;
 
     async fn authenticate_device(
