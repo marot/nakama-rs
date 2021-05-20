@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::{channel, Sender, Receiver};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 
 use futures::executor::block_on;
-use log::LevelFilter;
+use log::{LevelFilter, trace};
 use simple_logger::SimpleLogger;
 
 use nakama_rs::client::{Client, DefaultClient};
@@ -21,15 +21,19 @@ use nakama_rs::web_socket_adapter::WebSocketAdapter;
 // A second channel is used to kill the thread.
 // A third channel could be used to return the result of the future when available (e.g. a command)
 // This is something the user of the library would need to implement themselves, as it depends on the async runtime used.
-fn spawn_network_thread() -> (Sender<Pin<Box<dyn Future<Output = ()> + Send>>>, Sender<()>) {
+fn spawn_network_thread() -> (Sender<Pin<Box<dyn Future<Output = ()> + Send>>>, Sender<()>, Receiver<()>) {
     let (tx, rx) = channel::<Pin<Box<dyn Future<Output = ()> + Send>>>();
+    let (tx_response, rx_response) = channel::<()>();
     let (tx_kill, rx_kill) = channel::<()>();
     std::thread::spawn({
         move || loop {
             let future = rx.try_recv();
             match future {
                 Ok(future) => {
+                    trace!("Waiting for future");
                     block_on(future);
+                    trace!("Future received!");
+                    tx_response.send(());
                 }
                 Err(_) => {}
             }
@@ -43,7 +47,7 @@ fn spawn_network_thread() -> (Sender<Pin<Box<dyn Future<Output = ()> + Send>>>, 
         }
     });
 
-    (tx, tx_kill)
+    (tx, tx_kill, rx_response)
 }
 
 fn main() {
@@ -60,7 +64,30 @@ fn main() {
     let web_socket = Arc::new(WebSocket::new(adapter));
     let web_socket2 = Arc::new(WebSocket::new(adapter2));
 
-    let (send_futures, kill_network_thread) = spawn_network_thread();
+    let (send_futures, kill_network_thread, rx_response) = spawn_network_thread();
+
+    let (kill_tick, rc_kill) = channel();
+    std::thread::spawn({
+        let web_socket = web_socket.clone();
+        let web_socket2 = web_socket2.clone();
+        move || {
+            // Wait for 5 seconds because `do_some_chatting` doesn't inform us about being done
+            loop {
+                // This could also be called in a different thread than the main/game thread. The callbacks
+                // will be called in the same thread, invoking e.g. `on_received_channel_message`.
+                // Note that `tick` is also necessary to wake futures like `web_socket.join_chat` - it is not only necessary
+                // for the callbacks.
+                trace!("Ticking websockets");
+                web_socket.tick();
+                web_socket2.tick();
+                if let Ok(_) = rc_kill.try_recv() {
+                    return;
+                }
+
+                sleep(Duration::from_millis(500));
+            }
+        }
+    });
 
     let setup = {
         async {
@@ -74,28 +101,25 @@ fn main() {
             let mut session2 = session2.unwrap();
             web_socket.connect(&mut session, true, -1).await;
             web_socket2.connect(&mut session2, true, -1).await;
-
-            // Wait for connection (The `web_socket.connect` future is not implemented yet)
-            sleep(Duration::from_secs(2));
         }
     };
 
     block_on(setup);
-
-    let error_handling_example = async {
-        // This will fail and return an error. `testdeviceid4` will not be created.
-        client
-            .authenticate_device("testdeviceid3", None, false, HashMap::new())
-            .await?;
-        client
-            .authenticate_device("testdeviceid4", None, true, HashMap::new())
-            .await?;
-        Ok(())
-    };
-
-    let result: Result<(), <DefaultClient<RestHttpAdapter> as Client>::Error> =
-        block_on(error_handling_example);
-    println!("{:?}", result);
+    //
+    // let error_handling_example = async {
+    //     // This will fail and return an error. `testdeviceid4` will not be created.
+    //     client
+    //         .authenticate_device("testdeviceid3", None, false, HashMap::new())
+    //         .await?;
+    //     client
+    //         .authenticate_device("testdeviceid4", None, true, HashMap::new())
+    //         .await?;
+    //     Ok(())
+    // };
+    //
+    // let result: Result<(), <DefaultClient<RestHttpAdapter> as Client>::Error> =
+    //     block_on(error_handling_example);
+    // println!("{:?}", result);
 
     // Box::pin is necessary so that we can send the future to the network thread
     let do_some_chatting = Box::pin({
@@ -112,19 +136,8 @@ fn main() {
     });
 
     send_futures.send(do_some_chatting);
+    rx_response.recv();
 
-    let mut total_time = 0;
-    // Wait for 5 seconds because `do_some_chatting` doesn't inform us about being done
-    while total_time < 5 * 1000 {
-        // This could also be called in a different thread than the main/game thread. The callbacks
-        // will be called in the same thread, invoking e.g. `on_received_channel_message`.
-        // Note that `tick` is also necessary to wake futures like `web_socket.join_chat` - it is not only necessary
-        // for the callbacks.
-        web_socket.tick();
-        web_socket2.tick();
-        sleep(Duration::from_millis(60));
-        total_time += 60;
-    }
-
+    kill_tick.send(());
     kill_network_thread.send(());
 }

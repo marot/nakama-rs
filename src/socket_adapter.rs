@@ -21,7 +21,7 @@ pub trait SocketAdapter {
 
     fn connect(&mut self, addr: &str, timeout: i32);
 
-    fn send(&self, data: &str, reliable: bool);
+    fn send(&self, data: &str, reliable: bool) -> Result<(), Self::Error>;
 
     fn tick(&self);
 }

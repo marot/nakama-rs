@@ -14,6 +14,7 @@ nanoserde = { path = "../nanoserde" }
 async-trait = "0.1.50"
 quad-net = { path = "../quad-net" }
 futures = "0.3.15"
+oneshot = "0.1.2"
 futures-timer = "3.0.2"
 log = "0.4.14"
 

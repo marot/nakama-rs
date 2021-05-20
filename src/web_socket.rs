@@ -14,10 +14,13 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 
+use oneshot;
+
 struct SharedState {
     cid: i64,
     wakers: HashMap<i64, Waker>,
     responses: HashMap<i64, WebSocketMessageEnvelope>,
+    connected: Vec<oneshot::Sender<()>>,
 }
 
 struct WebSocketFuture {
@@ -84,6 +87,7 @@ impl<A: SocketAdapter> WebSocket<A> {
                 cid: 1,
                 wakers: HashMap::new(),
                 responses: HashMap::new(),
+                connected: vec![],
             })),
         };
 
@@ -102,6 +106,16 @@ impl<A: SocketAdapter> WebSocket<A> {
                         trace!("on_received: {}", msg);
                         handle_message(&shared_state, &msg);
                     }
+                }
+            });
+
+        web_socket.adapter.lock().unwrap()
+            .on_connected({
+                let shared_state = web_socket.shared_state.clone();
+                move || {
+                    shared_state.lock().unwrap()
+                        .connected.drain(..)
+                        .for_each(|sender| { sender.send(()); });
                 }
             });
 
@@ -132,7 +146,7 @@ impl<A: SocketAdapter> WebSocket<A> {
     }
 
     #[inline]
-    async fn send(&self, data: &str, reliable: bool) {
+    fn send(&self, data: &str, reliable: bool) {
         self.adapter.lock().expect("panic inside other mutex!")
             .send(data, reliable);
     }
@@ -178,10 +192,19 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
             ws_url, port, appear_online, session.auth_token,
         );
 
+        let (tx, rx) = oneshot::channel();
+
+        self.shared_state.lock().unwrap()
+            .connected.push(tx);
+
         self.adapter
             .lock()
             .unwrap()
             .connect(&ws_addr, connect_timeout);
+
+        rx.await;
+
+        trace!("WebSocket::connect: connected!")
     }
 
     async fn close(&self) {
@@ -245,6 +268,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
 #[cfg(test)]
 mod test {
+    use nanoserde::SerJson;
     #[derive(SerJson)]
     struct TestStruct {
         a: Option<String>,

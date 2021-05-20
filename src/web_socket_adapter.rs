@@ -2,29 +2,54 @@ use crate::socket_adapter::SocketAdapter;
 use qws;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender, SendError};
 use std::sync::{mpsc};
-use log::{trace, error};
+use log::{trace, error, debug, Level};
+use qws::{Handshake, CloseCode};
+
+enum Message {
+    StringMessage(String),
+    Connected,
+    Error(qws::Error),
+}
 
 pub struct WebSocketAdapter {
     on_connected: Option<Box<dyn Fn() + Send + 'static>>,
     on_closed: Option<Box<dyn Fn() + Send + 'static>>,
     on_received: Option<Box<dyn Fn(Result<String, WebSocketError>) + Send + 'static>>,
 
-    rx: Option<Receiver<String>>,
-    sender: Option<qws::Sender>,
+    rx_message: Option<Receiver<Message>>,
+    tx_message: Option<qws::Sender>,
 }
 
 // Client on the websocket thread
 struct WebSocketClient {
-    tx: Sender<String>,
+    tx: Sender<Message>,
+}
+
+impl WebSocketClient {
+    fn send(&self, message: Message) -> Result<(), SendError<Message>> {
+        self.tx.send(message)
+    }
 }
 
 impl qws::Handler for WebSocketClient {
+    fn on_shutdown(&mut self) {
+        trace!("WebSocketClient::on_shutdown called");
+    }
+
+    fn on_open(&mut self, shake: Handshake) -> qws::Result<()> {
+        if let Some(addr) = shake.remote_addr()? {
+            self.send(Message::Connected);
+            debug!("Connection with {} now open", addr);
+        }
+        Ok(())
+    }
+
     fn on_message(&mut self, msg: qws::Message) -> qws::Result<()> {
         match msg {
             qws::Message::Text(data) => {
-                let result = self.tx.send(data);
+                let result = self.send(Message::StringMessage(data));
                 if let Err(err) = result {
                     error!("Handler::on_message: {}", err);
                 }
@@ -35,6 +60,23 @@ impl qws::Handler for WebSocketClient {
         }
         Ok(())
     }
+
+    fn on_close(&mut self, code: CloseCode, reason: &str) {
+        debug!("Connection closing due to ({:?}) {}", code, reason);
+    }
+
+    // Copied from trait for now
+    fn on_error(&mut self, err: qws::Error) {
+        // Ignore connection reset errors by default, but allow library clients to see them by
+        // overriding this method if they want
+        if let qws::ErrorKind::Io(ref err) = err.kind {
+            if let Some(104) = err.raw_os_error() {
+                return;
+            }
+        }
+
+        self.send(Message::Error(err));
+    }
 }
 
 impl WebSocketAdapter {
@@ -44,8 +86,8 @@ impl WebSocketAdapter {
             on_closed: None,
             on_received: None,
 
-            rx: None,
-            sender: None,
+            rx_message: None,
+            tx_message: None,
         }
     }
 }
@@ -53,7 +95,13 @@ impl WebSocketAdapter {
 #[derive(Debug)]
 pub enum WebSocketError {
     IOError,
-    WSError,
+    WebSocketError(qws::Error),
+}
+
+impl From<qws::Error> for WebSocketError {
+    fn from(err: qws::Error) -> Self {
+        WebSocketError::WebSocketError(err)
+    }
 }
 
 impl Display for WebSocketError {
@@ -118,25 +166,40 @@ impl SocketAdapter for WebSocketAdapter {
             }
         });
 
-        // Todo keep sender
-        self.sender = rx_init.recv().ok();
+        self.tx_message = rx_init.recv().ok();
 
-        self.rx = Some(rx);
+        self.rx_message = Some(rx);
     }
 
-    fn send(&self, data: &str, _reliable: bool) {
-        if let Some(ref sender) = self.sender {
+    fn send(&self, data: &str, _reliable: bool) -> Result<(), Self::Error> {
+        if let Some(ref sender) = self.tx_message {
             println!("Sending {:?}", data);
-            let result = sender.send(qws::Message::Text(data.to_owned()));
-            println!("Result {:?}", result);
+            return sender.send(qws::Message::Text(data.to_owned()))
+                .map_err(|err| err.into())
         }
+
+        Ok(())
     }
 
     fn tick(&self) {
-        if let Some(ref rx) = self.rx {
+        if let Some(ref rx) = self.rx_message {
             while let Ok(data) = rx.try_recv() {
-                if let Some(ref cb) = self.on_received {
-                    cb(Ok(data));
+                match data {
+                    Message::StringMessage(msg) => {
+                        if let Some(ref cb) = self.on_received {
+                            cb(Ok(msg));
+                        }
+                    }
+                    Message::Connected => {
+                        if let Some(ref cb) = self.on_connected {
+                            cb();
+                        }
+                    }
+                    Message::Error(err) => {
+                        if let Some(ref cb) = self.on_received {
+                            cb(Err(err.into()));
+                        }
+                    }
                 }
             }
         }
@@ -155,7 +218,7 @@ mod test {
         SimpleLogger::new().init().unwrap();
 
         let mut socket_adapter = WebSocketAdapter::new();
-        socket_adapter.connect("ws://echo.websocket.org", 0);
+        socket_adapter.connect("ws://eco.websocket.org", 0);
         socket_adapter.on_received(move |data| println!("{:?}", data));
         sleep(Duration::from_secs(1));
 
