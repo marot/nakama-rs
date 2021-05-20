@@ -19,29 +19,8 @@ use oneshot;
 struct SharedState {
     cid: i64,
     wakers: HashMap<i64, Waker>,
-    responses: HashMap<i64, WebSocketMessageEnvelope>,
     connected: Vec<oneshot::Sender<()>>,
-}
-
-struct WebSocketFuture {
-    shared_state: Arc<Mutex<SharedState>>,
-    cid: i64,
-}
-
-impl Future for WebSocketFuture {
-    type Output = WebSocketMessageEnvelope;
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        // TODO: timeout
-        let mut state = self.shared_state.lock().expect("Panic inside other mutex!");
-        if let Some(response) = state.responses.remove(&self.cid) {
-            state.wakers.remove(&self.cid);
-            return Poll::Ready(response);
-        }
-
-        state.wakers.insert(self.cid, cx.waker().clone());
-        Poll::Pending
-    }
+    responses: HashMap<i64, oneshot::Sender<WebSocketMessageEnvelope>>,
 }
 
 pub struct WebSocket<A: SocketAdapter> {
@@ -66,10 +45,8 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
                 trace!("handle_message: Received message with cid");
                 let mut state = shared_state.lock().expect("Panic inside other mutex!");
                 let cid = cid.parse::<i64>().unwrap();
-                state.responses.insert(cid, event);
-                if let Some(waker) = state.wakers.remove(&cid) {
-                    trace!("handle_message: Waking future");
-                    waker.wake();
+                if let Some(response_event) = state.responses.remove(&cid) {
+                    response_event.send(event);
                 }
             }
         }
@@ -152,11 +129,14 @@ impl<A: SocketAdapter> WebSocket<A> {
     }
 
     async fn wait_response(&self, cid: i64) -> WebSocketMessageEnvelope {
-        WebSocketFuture {
-            shared_state: self.shared_state.clone(),
-            cid,
+        let (tx, rx) = oneshot::channel::<WebSocketMessageEnvelope>();
+
+        {
+            let mut shared_state = self.shared_state.lock().unwrap();
+            shared_state.responses.insert(cid, tx);
         }
-        .await
+
+        rx.await.unwrap()
     }
 }
 
@@ -203,8 +183,6 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
             .connect(&ws_addr, connect_timeout);
 
         rx.await;
-
-        trace!("WebSocket::connect: connected!")
     }
 
     async fn close(&self) {
@@ -218,11 +196,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let envelope = WebSocketFuture {
-            shared_state: self.shared_state.clone(),
-            cid,
-        }
-        .await;
+        let envelope = self.wait_response(cid).await;
 
         envelope.new_match.unwrap()
     }
@@ -239,8 +213,6 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
         // TODO: Message ack
         self.wait_response(cid).await;
-        // let result_envelope = self.wait_response(cid).await;
-        // result_envelope.channel.unwrap()
     }
 
     async fn join_chat(
