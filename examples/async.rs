@@ -1,16 +1,17 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::mpsc::{channel, Sender, Receiver};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 
 use futures::executor::block_on;
-use log::{LevelFilter, trace};
+use log::{trace, LevelFilter};
 use simple_logger::SimpleLogger;
 
-use nakama_rs::client::{Client, DefaultClient};
+use nakama_rs::client::Client;
+use nakama_rs::default_client::DefaultClient;
 use nakama_rs::http_adapter::RestHttpAdapter;
 use nakama_rs::socket::Socket;
 use nakama_rs::web_socket::WebSocket;
@@ -21,7 +22,11 @@ use nakama_rs::web_socket_adapter::WebSocketAdapter;
 // A second channel is used to kill the thread.
 // A third channel could be used to return the result of the future when available (e.g. a command)
 // This is something the user of the library would need to implement themselves, as it depends on the async runtime used.
-fn spawn_network_thread() -> (Sender<Pin<Box<dyn Future<Output = ()> + Send>>>, Sender<()>, Receiver<()>) {
+fn spawn_network_thread() -> (
+    Sender<Pin<Box<dyn Future<Output = ()> + Send>>>,
+    Sender<()>,
+    Receiver<()>,
+) {
     let (tx, rx) = channel::<Pin<Box<dyn Future<Output = ()> + Send>>>();
     let (tx_response, rx_response) = channel::<()>();
     let (tx_kill, rx_kill) = channel::<()>();

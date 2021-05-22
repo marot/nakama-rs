@@ -3,7 +3,7 @@
 //! ## Authenticate
 //! 1. Build an instance of the client
 //! ```
-//! # use nakama_rs::client::{DefaultClient, Client};
+//! # use nakama_rs::client::{ Client};
 //! # use nakama_rs::http_adapter::RestHttpAdapter;
 //! # use futures::executor::block_on;
 //! # use std::collections::HashMap;
@@ -33,6 +33,7 @@ mod api_gen;
 pub mod config;
 
 pub mod client;
+pub mod default_client;
 pub mod http_adapter;
 pub mod matchmaker;
 pub mod session;

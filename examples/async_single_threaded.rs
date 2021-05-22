@@ -14,7 +14,8 @@ use simple_logger::SimpleLogger;
 use cassette::{pin_mut, yield_now, Cassette};
 
 use crate::State::SentMessage;
-use nakama_rs::client::{Client, DefaultClient};
+use nakama_rs::client::Client;
+use nakama_rs::default_client::DefaultClient;
 use nakama_rs::http_adapter::RestHttpAdapter;
 use nakama_rs::socket::Socket;
 use nakama_rs::web_socket::WebSocket;
