@@ -2358,6 +2358,7 @@ pub fn authenticate_device(
         password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
+    println!("{:?}", body_json);
 
     let method = Method::Post;
 
