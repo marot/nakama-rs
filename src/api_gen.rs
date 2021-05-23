@@ -25,7 +25,7 @@ pub struct RestRequest<Response> {
     pub query_params: String,
     pub body: String,
     pub method: Method,
-    pub _marker: std::marker::PhantomData<Response>,
+    _marker: std::marker::PhantomData<Response>,
 }
 
 trait ToRestString {
@@ -113,6 +113,7 @@ impl ToRestString for ValidatedPurchaseStore {
 #[nserde(default)]
 pub struct WriteLeaderboardRecordRequestLeaderboardRecordWrite {
     pub metadata: String,
+    pub operator: ApiOverrideOperator,
     pub score: String,
     pub subscore: String,
 }
@@ -124,6 +125,9 @@ impl ToRestString for WriteLeaderboardRecordRequestLeaderboardRecordWrite {
         output.push_str("{");
 
         output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
+
+        output.push_str(",");
+        output.push_str(&format!("\"operator\": {}", self.operator.to_string()));
 
         output.push_str(",");
         output.push_str(&format!("\"score\": \"{}\"", self.score));
@@ -140,6 +144,7 @@ impl ToRestString for WriteLeaderboardRecordRequestLeaderboardRecordWrite {
 #[nserde(default)]
 pub struct WriteTournamentRecordRequestTournamentRecordWrite {
     pub metadata: String,
+    pub operator: ApiOverrideOperator,
     pub score: String,
     pub subscore: String,
 }
@@ -151,6 +156,9 @@ impl ToRestString for WriteTournamentRecordRequestTournamentRecordWrite {
         output.push_str("{");
 
         output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
+
+        output.push_str(",");
+        output.push_str(&format!("\"operator\": {}", self.operator.to_string()));
 
         output.push_str(",");
         output.push_str(&format!("\"score\": \"{}\"", self.score));
@@ -233,7 +241,7 @@ impl ToRestString for ApiAccountApple {
             let map_string = self
                 .vars
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -263,7 +271,7 @@ impl ToRestString for ApiAccountCustom {
             let map_string = self
                 .vars
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -293,7 +301,7 @@ impl ToRestString for ApiAccountDevice {
             let map_string = self
                 .vars
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -327,7 +335,7 @@ impl ToRestString for ApiAccountEmail {
             let map_string = self
                 .vars
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -357,7 +365,7 @@ impl ToRestString for ApiAccountFacebook {
             let map_string = self
                 .vars
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -390,7 +398,7 @@ impl ToRestString for ApiAccountFacebookInstantGame {
             let map_string = self
                 .vars
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -443,7 +451,7 @@ impl ToRestString for ApiAccountGameCenter {
             let map_string = self
                 .vars
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -473,7 +481,7 @@ impl ToRestString for ApiAccountGoogle {
             let map_string = self
                 .vars
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -503,7 +511,7 @@ impl ToRestString for ApiAccountSteam {
             let map_string = self
                 .vars
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -738,7 +746,7 @@ impl ToRestString for ApiEvent {
             let map_string = self
                 .properties
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -1208,6 +1216,21 @@ impl ToRestString for ApiNotificationList {
     }
 }
 
+/// Operator that can be used to override the one set in the leaderboard.   - NO_OVERRIDE: Do not override the leaderboard operator.  - BEST: Override the leaderboard operator with BEST.  - SET: Override the leaderboard operator with SET.  - INCREMENT: Override the leaderboard operator with INCREMENT.  - DECREMENT: Override the leaderboard operator with DECREMENT.
+#[derive(Debug, DeJson, Default, Clone)]
+#[nserde(default)]
+pub struct ApiOverrideOperator {}
+
+impl ToRestString for ApiOverrideOperator {
+    fn to_string(&self) -> String {
+        let mut output = String::new();
+
+        output.push_str("{");
+        output.push_str("}");
+        return output;
+    }
+}
+
 /// Storage objects to get.
 #[derive(Debug, DeJson, Default, Clone)]
 #[nserde(default)]
@@ -1359,7 +1382,7 @@ impl ToRestString for ApiSessionRefreshRequest {
             let map_string = self
                 .vars
                 .iter()
-                .map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
                 .collect::<Vec<_>>();
             map_string.join(", ")
         }));
@@ -2358,7 +2381,6 @@ pub fn authenticate_device(
         password: basic_auth_password.to_owned(),
     };
     let body_json = body.to_string();
-    println!("{:?}", body_json);
 
     let method = Method::Post;
 
@@ -3218,10 +3240,10 @@ pub fn add_friends(bearer_token: &str, ids: &[String], usernames: &[String]) -> 
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in ids {
-        query_params.push_str(&format!("ids={}&", elem));
+        query_params.push_str(&format!("ids={:?}&", elem));
     }
     for elem in usernames {
-        query_params.push_str(&format!("usernames={}&", elem));
+        query_params.push_str(&format!("usernames={:?}&", elem));
     }
 
     let authentication = Authentication::Bearer {
@@ -4172,7 +4194,6 @@ pub fn write_storage_objects(
         token: bearer_token.to_owned(),
     };
     let body_json = body.to_string();
-    println!("{}", body_json);
 
     let method = Method::Put;
 
@@ -4378,6 +4399,35 @@ pub fn list_tournament_records(
     let body_json = String::new();
 
     let method = Method::Get;
+
+    RestRequest {
+        authentication,
+        urlpath,
+        query_params,
+        body: body_json,
+        method,
+        _marker: std::marker::PhantomData,
+    }
+}
+/// Write a record to a tournament.
+pub fn write_tournament_record_2(
+    bearer_token: &str,
+    tournament_id: &str,
+    body: WriteTournamentRecordRequestTournamentRecordWrite,
+) -> RestRequest<ApiLeaderboardRecord> {
+    #[allow(unused_mut)]
+    let mut urlpath = "/v2/tournament/{tournamentId}".to_string();
+    urlpath = urlpath.replace("{tournamentId}", tournament_id);
+
+    #[allow(unused_mut)]
+    let mut query_params = String::new();
+
+    let authentication = Authentication::Bearer {
+        token: bearer_token.to_owned(),
+    };
+    let body_json = body.to_string();
+
+    let method = Method::Post;
 
     RestRequest {
         authentication,

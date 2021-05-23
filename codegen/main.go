@@ -138,7 +138,7 @@ impl ToRestString for {{ $classname }} {
 	    let map_string = self
 		.{{$fieldname}}
 		.iter()
-		.map(|(key, value)| format!("\"{}\" = {}", key.to_string(), value.to_string()))
+		.map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
 		.collect::<Vec<_>>();
 	    map_string.join(", ")
 	}));

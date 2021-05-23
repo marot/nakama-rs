@@ -5,11 +5,11 @@ use crate::api::{
     ApiChannelMessageList, ApiCreateGroupRequest, ApiDeleteStorageObjectId,
     ApiDeleteStorageObjectsRequest, ApiEvent, ApiFriendList, ApiGroup, ApiGroupList,
     ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiLinkSteamRequest,
-    ApiMatchList, ApiNotificationList, ApiReadStorageObjectId, ApiReadStorageObjectsRequest,
-    ApiRpc, ApiSessionLogoutRequest, ApiSessionRefreshRequest, ApiStorageObjectAcks,
-    ApiStorageObjectList, ApiStorageObjects, ApiTournamentList, ApiTournamentRecordList,
-    ApiUpdateAccountRequest, ApiUpdateGroupRequest, ApiUserGroupList, ApiUsers,
-    ApiValidatePurchaseAppleRequest, ApiValidatePurchaseGoogleRequest,
+    ApiMatchList, ApiNotificationList, ApiOverrideOperator, ApiReadStorageObjectId,
+    ApiReadStorageObjectsRequest, ApiRpc, ApiSessionLogoutRequest, ApiSessionRefreshRequest,
+    ApiStorageObjectAcks, ApiStorageObjectList, ApiStorageObjects, ApiTournamentList,
+    ApiTournamentRecordList, ApiUpdateAccountRequest, ApiUpdateGroupRequest, ApiUserGroupList,
+    ApiUsers, ApiValidatePurchaseAppleRequest, ApiValidatePurchaseGoogleRequest,
     ApiValidatePurchaseHuaweiRequest, ApiValidatePurchaseResponse, ApiWriteStorageObject,
     RestRequest, WriteLeaderboardRecordRequestLeaderboardRecordWrite,
     WriteTournamentRecordRequestTournamentRecordWrite,
@@ -63,6 +63,7 @@ impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
     }
 
     fn map_session(api_session: ApiSession) -> Session {
+        println!("{:?}", api_session);
         Session {
             auth_token: api_session.token,
             refresh_token: if api_session.refresh_token.len() == 0 {
@@ -1251,6 +1252,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 metadata: metadata.unwrap_or("").to_owned(),
                 score: score.to_string(),
                 subscore: sub_score.map_or("".to_owned(), |sub_score| sub_score.to_string()),
+                operator: ApiOverrideOperator {},
             },
         );
 
@@ -1287,6 +1289,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 metadata: metadata.unwrap_or("").to_owned(),
                 score: score.to_string(),
                 subscore: sub_score.map_or("".to_owned(), |sub_score| sub_score.to_string()),
+                operator: ApiOverrideOperator {},
             },
         );
 
