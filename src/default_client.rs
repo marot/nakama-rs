@@ -105,7 +105,7 @@ impl<A: ClientAdapter + Send + Sync> DefaultClient<A> {
     }
 }
 
-fn str_slice_to_owned(slice: &[&str]) -> Vec<String> {
+pub fn str_slice_to_owned(slice: &[&str]) -> Vec<String> {
     slice.iter().map(|id| (*id).to_owned()).collect()
 }
 

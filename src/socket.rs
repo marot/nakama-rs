@@ -1,4 +1,4 @@
-use crate::api::{ApiChannelMessage, ApiNotification, ApiRpc, ApiNotificationList};
+use crate::api::{ApiChannelMessage, ApiNotification, ApiRpc, ApiNotificationList, ApiUser};
 use crate::session::Session;
 use async_trait::async_trait;
 use nanoserde::{DeJson, SerJson, DeJsonErr};
@@ -136,7 +136,7 @@ pub struct MatchDataSend {
     pub match_id: String,
     pub op_code: i64,
     pub data: Vec<u8>,
-    pub presences: UserPresence,
+    pub presences: Vec<UserPresence>,
     pub reliable: bool,
 }
 
@@ -436,7 +436,7 @@ pub trait Socket {
     // It would make sense to have a future here
     fn on_closed<T>(&mut self, callback: T)
     where
-        T: Fn() + 'static;
+        T: Fn() + Send + 'static;
 
     fn on_connected<T>(&mut self, callback: T)
     where
@@ -446,13 +446,80 @@ pub trait Socket {
     where
         T: Fn(ApiChannelMessage) + 'static;
 
-    async fn connect(&self, session: &mut Session, appear_online: bool, connect_timeout: i32);
+    fn on_received_channel_presence<T>(&mut self, callback: T)
+        where
+            T: Fn(ChannelPresenceEvent) + 'static;
+
+    fn on_received_error<T>(&mut self, callback: T)
+        where
+            T: Fn(Error) + 'static;
+
+    fn on_received_matchmaker_matched<T>(&mut self, callback: T)
+        where
+            T: Fn(MatchmakerMatched) + 'static;
+
+    fn on_received_match_state<T>(&mut self, callback: T)
+        where
+            T: Fn(MatchData) + 'static;
+
+    fn on_received_match_presence<T>(&mut self, callback: T)
+        where
+            T: Fn(MatchPresenceEvent) + 'static;
+
+    fn on_received_notification<T>(&mut self, callback: T)
+        where
+            T: Fn(ApiNotification) + 'static;
+
+    fn on_received_party_close<T>(&mut self, callback: T)
+        where
+            T: Fn(PartyClose) + 'static;
+
+    fn on_received_party_data<T>(&mut self, callback: T)
+        where
+            T: Fn(PartyData) + 'static;
+
+    fn on_received_party_join_request<T>(&mut self, callback: T)
+        where
+            T: Fn(PartyJoinRequest) + 'static;
+
+    fn on_received_party_leader<T>(&mut self, callback: T)
+        where
+            T: Fn(PartyLeader) + 'static;
+
+    fn on_received_party_presence<T>(&mut self, callback: T)
+        where
+            T: Fn(PartyPresenceEvent) + 'static;
+
+    fn on_received_status_presence<T>(&mut self, callback: T)
+        where
+            T: Fn(StatusPresenceEvent) + 'static;
+
+    fn on_received_stream_presence<T>(&mut self, callback: T)
+        where
+            T: Fn(StreamPresenceEvent) + 'static;
+
+    fn on_received_stream_state<T>(&mut self, callback: T)
+        where
+            T: Fn(StreamData) + 'static;
+
+    async fn accept_party_member(&self, party_id: &str, user_presence: &UserPresence);
+
+    async fn add_matchmaker(&self, query: &str, min_count: Option<i32>, max_count: Option<i32>,
+    string_properties: HashMap<String, String>, numeric_properties: HashMap<String, f64>) -> MatchmakerTicket;
+
+    async fn add_matchmaker_party(&self, party_id: &str, query: &str, min_count: i32, max_count: i32, string_properties: HashMap<String, String>, numeric_properties: HashMap<String, f64>) -> PartyMatchmakerTicket;
+
+    async fn close_party(&self, party_id: &str);
 
     async fn close(&self);
 
+    async fn connect(&self, session: &mut Session, appear_online: bool, connect_timeout: i32);
+
     async fn create_match(&self) -> Match;
 
-    async fn write_chat_message(&self, channel_id: &str, content: &str);
+    async fn create_party(&self, open: bool, max_size: i32) -> Party;
+
+    async fn follow_users(&self, user_ids: &[&str], usernames: &[&str]) -> Status;
 
     async fn join_chat(
         &self,
@@ -461,4 +528,44 @@ pub trait Socket {
         persistence: bool,
         hidden: bool,
     ) -> Channel;
+
+    async fn join_party(&self, party_id: &str);
+
+    async fn join_match(&self, matched: MatchmakerMatched) -> Match;
+
+    async fn join_match_by_id(&self, match_id: &str, metadata: HashMap<String, String>) -> Match;
+
+    async fn leave_chat(&self, channel_id: &str);
+
+    async fn leave_match(&self, match_id: &str);
+
+    async fn leave_party(&self, party_id: &str);
+
+    async fn list_party_join_requests(&self, party_id: &str) -> PartyJoinRequest;
+
+    async fn promote_party_member(&self, party_id: &str, party_member: UserPresence);
+
+    async fn remove_chat_message(&self, channel_id: &str, message_id: &str) -> ChannelMessageAck;
+
+    async fn remove_matchmaker(&self, ticket: &str);
+
+    async fn remove_matchmaker_party(&self, party_id: &str, ticket: &str);
+
+    async fn remove_party_member(&self, party_id: &str, presence: UserPresence);
+
+    async fn rpc(&self, func_id: &str, payload: &str) -> ApiRpc;
+
+    async fn rpc_bytes(&self, func_id: &str, payload: &[u8]) -> ApiRpc;
+
+    async fn send_match_state(&self, match_id: &str, op_code: i64, state: &[u8], presences: &[UserPresence]);
+
+    async fn send_party_data(&self, party_id: &str, op_code: i64, data: &[u8]);
+
+    async fn unfollow_users(&self, user_ids: &[&str]);
+
+    async fn update_chat_message(&self, channel_id: &str, message_id: &str, content: &str) -> ChannelMessageAck;
+
+    async fn update_status(&self, status: &str);
+
+    async fn write_chat_message(&self, channel_id: &str, content: &str);
 }
