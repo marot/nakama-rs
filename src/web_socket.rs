@@ -1,9 +1,6 @@
 use crate::api::ApiChannelMessage;
 use crate::session::Session;
-use crate::socket::{
-    Channel, ChannelJoinMessage, ChannelSendMessage, Match, MatchCreate, Socket,
-    WebSocketMessageEnvelope,
-};
+use crate::socket::{Channel, ChannelJoin, Match, MatchCreate, Socket, WebSocketMessageEnvelope, ChannelMessageSend};
 use crate::socket_adapter::SocketAdapter;
 use async_trait::async_trait;
 use log::{error, trace};
@@ -203,7 +200,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
     async fn write_chat_message(&self, channel_id: &str, content: &str) {
         let (mut envelope, cid) = self.make_envelope_with_cid();
-        envelope.channel_message_send = Some(ChannelSendMessage {
+        envelope.channel_message_send = Some(ChannelMessageSend {
             channel_id: channel_id.to_owned(),
             content: content.to_owned(),
         });
@@ -223,7 +220,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         hidden: bool,
     ) -> Channel {
         let (mut envelope, cid) = self.make_envelope_with_cid();
-        envelope.channel_join = Some(ChannelJoinMessage {
+        envelope.channel_join = Some(ChannelJoin {
             channel_type,
             hidden,
             persistence,

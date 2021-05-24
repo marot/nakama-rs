@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use nanoserde::DeJson;
+use nanoserde::{DeJson, SerJson};
 
 #[derive(Debug, Clone)]
 pub enum Authentication {
@@ -521,7 +521,7 @@ impl ToRestString for ApiAccountSteam {
 }
 
 /// A message sent on a channel.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiChannelMessage {
     pub channel_id: String,
@@ -1141,7 +1141,7 @@ impl ToRestString for ApiMatchList {
 }
 
 /// A notification in the server.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiNotification {
     pub code: i32,
@@ -1184,7 +1184,7 @@ impl ToRestString for ApiNotification {
 }
 
 /// A collection of zero or more notifications.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiNotificationList {
     pub cacheable_cursor: String,
@@ -1285,7 +1285,7 @@ impl ToRestString for ApiReadStorageObjectsRequest {
 }
 
 /// Execute an Lua function on the server.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiRpc {
     pub http_key: String,
