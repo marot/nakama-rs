@@ -324,7 +324,9 @@ pub struct PartyDataSend {
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct PartyPresenceEvent {
     pub party_id: String,
+    #[nserde(default)]
     pub joins: Vec<UserPresence>,
+    #[nserde(default)]
     pub leaves: Vec<UserPresence>,
 }
 
@@ -551,7 +553,7 @@ pub trait Socket {
         numeric_properties: HashMap<String, f64>,
     ) -> Result<PartyMatchmakerTicket, Self::Error>;
 
-    async fn close_party(&self, party_id: &str);
+    async fn close_party(&self, party_id: &str) -> Result<(), Self::Error>;
 
     async fn close(&self);
 
@@ -575,7 +577,7 @@ pub trait Socket {
         hidden: bool,
     ) -> Result<Channel, Self::Error>;
 
-    async fn join_party(&self, party_id: &str);
+    async fn join_party(&self, party_id: &str) -> Result<(), Self::Error>;
 
     async fn join_match(&self, matched: MatchmakerMatched) -> Result<Match, Self::Error>;
 
@@ -589,7 +591,7 @@ pub trait Socket {
 
     async fn leave_match(&self, match_id: &str);
 
-    async fn leave_party(&self, party_id: &str);
+    async fn leave_party(&self, party_id: &str) -> Result<(), Self::Error>;
 
     async fn list_party_join_requests(
         &self,

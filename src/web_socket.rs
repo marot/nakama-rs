@@ -62,6 +62,7 @@ struct SharedState {
     wakers: HashMap<i64, Waker>,
     connected: Vec<oneshot::Sender<()>>,
     status_presence: Vec<oneshot::Sender<StatusPresenceEvent>>,
+    party_close: Vec<oneshot::Sender<PartyClose>>,
     responses: HashMap<i64, oneshot::Sender<Result<WebSocketMessageEnvelope, DeJsonErr>>>,
     timeouts: HashMap<i64, i64>,
     on_closed: Option<Box<dyn Fn() + Send + 'static>>,
@@ -155,6 +156,9 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
                 return;
             }
             if let Some(message) = event.party_close {
+                shared_state.party_close.drain(..).for_each(|tx| {
+                    tx.send(message.clone());
+                });
                 if let Some(ref cb) = shared_state.on_received_party_close {
                     cb(message)
                 }
@@ -370,6 +374,17 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
                 return Err(WebSocketError::DeJsonError(error));
             }
         }
+    }
+
+    pub async fn party_close(&self) -> PartyClose {
+        let (tx, rx) = oneshot::channel::<PartyClose>();
+
+        {
+            let mut shared_state = self.shared_state.lock().unwrap();
+            shared_state.party_close.push(tx);
+        }
+
+        rx.await.unwrap()
     }
 
     pub async fn status_presence(&self) -> StatusPresenceEvent {
@@ -588,7 +603,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(envelope.party_matchmaker_ticket.unwrap())
     }
 
-    async fn close_party(&self, party_id: &str) {
+    async fn close_party(&self, party_id: &str) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_close = Some(PartyClose {
             party_id: party_id.to_owned(),
@@ -596,6 +611,10 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
         let json = envelope.serialize_json();
         self.send(&json, false);
+
+        self.wait_response(cid).await?;
+
+        Ok(())
     }
 
     async fn close(&self) {
@@ -686,7 +705,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.channel.unwrap())
     }
 
-    async fn join_party(&self, party_id: &str) {
+    async fn join_party(&self, party_id: &str) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_join = Some(PartyJoin {
             party_id: party_id.to_owned(),
@@ -694,6 +713,9 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
         let json = envelope.serialize_json();
         self.send(&json, false);
+
+        self.wait_response(cid).await?;
+        Ok(())
     }
 
     async fn join_match(&self, matched: MatchmakerMatched) -> Result<Match, Self::Error> {
@@ -750,7 +772,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false);
     }
 
-    async fn leave_party(&self, party_id: &str) {
+    async fn leave_party(&self, party_id: &str) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_leave = Some(PartyLeave {
             party_id: party_id.to_owned(),
@@ -758,6 +780,9 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
         let json = envelope.serialize_json();
         self.send(&json, false);
+
+        self.wait_response(cid).await?;
+        Ok(())
     }
 
     async fn list_party_join_requests(
