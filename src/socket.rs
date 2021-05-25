@@ -6,9 +6,6 @@ use std::collections::HashMap;
 use std::error;
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
-pub struct Timestamp(String);
-
-#[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Channel {
     pub id: String,
     #[nserde(default)]
@@ -54,13 +51,19 @@ pub struct ChannelMessageAck {
     // TODO: What is the code?
     pub code: i32,
     pub username: String,
-    pub create_time: Timestamp,
-    pub update_time: Timestamp,
+    // TODO: Timestamp ser/de
+    pub create_time: String,
+    // TODO: Timestamp ser/de
+    pub update_time: String,
     pub persistent: bool,
-    pub room_name: Option<String>,
-    pub group_id: Option<String>,
-    pub user_id_one: Option<String>,
-    pub user_id_two: Option<String>,
+    #[nserde(default)]
+    pub room_name: String,
+    #[nserde(default)]
+    pub group_id: String,
+    #[nserde(default)]
+    pub user_id_one: String,
+    #[nserde(default)]
+    pub user_id_two: String,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
@@ -115,6 +118,7 @@ pub struct Error {
     // TODO: Use ErrorCode
     pub code: i32,
     pub message: String,
+    #[nserde(default)]
     pub context: HashMap<String, String>,
 }
 
@@ -393,6 +397,11 @@ pub struct UserPresence {
     pub status: String,
     pub username: String,
     pub user_id: String,
+}
+
+#[derive(DeJson, SerJson, Debug, Clone, Default)]
+pub struct WebSocketMessageEnvelopeHeader {
+    pub cid: Option<String>,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]

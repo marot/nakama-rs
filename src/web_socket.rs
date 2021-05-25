@@ -9,7 +9,7 @@ use crate::socket::{
     PartyLeader, PartyLeave, PartyMatchmakerAdd, PartyMatchmakerRemove, PartyMatchmakerTicket,
     PartyPresenceEvent, PartyPromote, PartyRemove, Socket, Status, StatusFollow,
     StatusPresenceEvent, StatusUnfollow, StatusUpdate, StreamData, StreamPresenceEvent,
-    UserPresence, WebSocketMessageEnvelope,
+    UserPresence, WebSocketMessageEnvelope, WebSocketMessageEnvelopeHeader,
 };
 use crate::socket_adapter::SocketAdapter;
 use async_trait::async_trait;
@@ -32,6 +32,8 @@ pub enum WebSocketError<A: SocketAdapter> {
     AdapterError(A::Error),
     TimeoutError,
     RecvError(RecvError),
+    ApiError(Error),
+    DeJsonError(DeJsonErr),
 }
 
 impl<A: SocketAdapter> Debug for WebSocketError<A> {
@@ -40,6 +42,8 @@ impl<A: SocketAdapter> Debug for WebSocketError<A> {
             WebSocketError::AdapterError(err) => std::fmt::Debug::fmt(err, f),
             WebSocketError::TimeoutError => std::fmt::Debug::fmt("Timeout", f),
             WebSocketError::RecvError(err) => std::fmt::Debug::fmt(err, f),
+            WebSocketError::ApiError(err) => std::fmt::Debug::fmt(err, f),
+            WebSocketError::DeJsonError(err) => std::fmt::Debug::fmt(err, f),
         }
     }
 }
@@ -58,7 +62,7 @@ struct SharedState {
     wakers: HashMap<i64, Waker>,
     connected: Vec<oneshot::Sender<()>>,
     status_presence: Vec<oneshot::Sender<StatusPresenceEvent>>,
-    responses: HashMap<i64, oneshot::Sender<WebSocketMessageEnvelope>>,
+    responses: HashMap<i64, oneshot::Sender<Result<WebSocketMessageEnvelope, DeJsonErr>>>,
     timeouts: HashMap<i64, i64>,
     on_closed: Option<Box<dyn Fn() + Send + 'static>>,
     on_connected: Option<Box<dyn Fn() + Send + 'static>>,
@@ -102,7 +106,7 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
                 trace!("handle_message: Received message with cid");
                 let cid = cid.parse::<i64>().unwrap();
                 if let Some(response_event) = shared_state.responses.remove(&cid) {
-                    response_event.send(event);
+                    response_event.send(Ok(event));
                 }
                 return;
             }
@@ -205,6 +209,26 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
         }
         Err(err) => {
             error!("handle_message: Failed to parse json: {}", err);
+            let mut result: Result<WebSocketMessageEnvelopeHeader, DeJsonErr> =
+                DeJson::deserialize_json(&msg);
+            match result {
+                Ok(event) => {
+                    // Inform the future about the API error
+                    if let Some(ref cid) = event.cid {
+                        trace!("handle_message: Received error message with cid");
+                        let cid = cid.parse::<i64>().unwrap();
+                        if let Some(response_event) = shared_state.responses.remove(&cid) {
+                            // Send DeJsonErr
+                            response_event.send(Err(err));
+                        }
+                        return;
+                    }
+                }
+                Err(_) => {
+                    // We can't parse more information. Forward the json parse error
+                    error!("{:?}", err)
+                }
+            }
         }
     }
 }
@@ -326,7 +350,7 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
         &self,
         cid: i64,
     ) -> Result<WebSocketMessageEnvelope, <Self as Socket>::Error> {
-        let (tx, rx) = oneshot::channel::<WebSocketMessageEnvelope>();
+        let (tx, rx) = oneshot::channel::<Result<WebSocketMessageEnvelope, DeJsonErr>>();
 
         {
             let mut shared_state = self.shared_state.lock().unwrap();
@@ -334,7 +358,18 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
             shared_state.timeouts.insert(cid, 2000);
         }
 
-        rx.await.map_err(|err| WebSocketError::RecvError(err))
+        let result = rx.await.map_err(|err| WebSocketError::RecvError(err))?;
+        match result {
+            Ok(message) => {
+                if let Some(error) = message.error {
+                    return Err(WebSocketError::ApiError(error));
+                }
+                return Ok(message);
+            }
+            Err(error) => {
+                return Err(WebSocketError::DeJsonError(error));
+            }
+        }
     }
 
     pub async fn status_presence(&self) -> StatusPresenceEvent {
