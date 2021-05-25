@@ -1,9 +1,10 @@
 use crate::api::{ApiChannelMessage, ApiNotification, ApiNotificationList, ApiRpc, ApiUser};
 use crate::session::Session;
 use async_trait::async_trait;
-use nanoserde::{DeJson, DeJsonErr, SerJson};
+use nanoserde::{DeJson, DeJsonErr, SerJson, DeJsonState};
 use std::collections::HashMap;
 use std::error;
+use std::str::Chars;
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Channel {
@@ -220,6 +221,7 @@ pub struct Notifications {
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Party {
     pub party_id: String,
+    #[nserde(default)]
     pub open: bool,
     pub max_size: i32,
     #[nserde(rename = "self")]
@@ -281,6 +283,7 @@ pub struct PartyJoinRequestList {
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct PartyJoinRequest {
     pub party_id: String,
+    #[nserde(default)]
     pub presences: Vec<UserPresence>,
 }
 
@@ -306,7 +309,7 @@ pub struct PartyMatchmakerTicket {
     pub ticket: String,
 }
 
-#[derive(DeJson, SerJson, Debug, Clone, Default)]
+#[derive(SerJson, Debug, Clone, Default)]
 pub struct PartyData {
     pub party_id: String,
     pub presence: UserPresence,
@@ -315,10 +318,44 @@ pub struct PartyData {
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
+pub struct PartyDataProxy {
+    pub party_id: String,
+    pub presence: UserPresence,
+    // TODO: Why is this sent as a string?
+    pub op_code: String,
+    pub data: String,
+}
+
+impl DeJson for PartyData {
+    fn de_json(state: &mut DeJsonState, input: &mut Chars) -> Result<Self, DeJsonErr> {
+        let proxy: PartyDataProxy = DeJson::de_json(state, input)?;
+        let data = base64::decode(proxy.data);
+        match data {
+            Ok(data) => {
+                Ok(PartyData {
+                    party_id: proxy.party_id,
+                    presence: proxy.presence,
+                    op_code: proxy.op_code.parse().unwrap(),
+                    data,
+                })
+            }
+            Err(err) => {
+                Err(nanoserde::DeJsonErr {
+                    msg: err.to_string(),
+                    // TODO: Correct lines
+                    col: 0,
+                    line: 0,
+                })
+            }
+        }
+    }
+}
+
+#[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct PartyDataSend {
     pub party_id: String,
     pub op_code: i64,
-    pub data: Vec<u8>,
+    pub data: String,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
@@ -394,10 +431,13 @@ pub struct StreamPresenceEvent {
 pub struct UserPresence {
     #[nserde(default)]
     pub persistence: bool,
+    #[nserde(default)]
     pub session_id: String,
     #[nserde(default)]
     pub status: String,
+    #[nserde(default)]
     pub username: String,
+    #[nserde(default)]
     pub user_id: String,
 }
 
@@ -532,7 +572,7 @@ pub trait Socket {
     where
         T: Fn(StreamData) + Send + 'static;
 
-    async fn accept_party_member(&self, party_id: &str, user_presence: &UserPresence);
+    async fn accept_party_member(&self, party_id: &str, user_presence: &UserPresence) -> Result<(), Self::Error>;
 
     async fn add_matchmaker(
         &self,
@@ -598,7 +638,7 @@ pub trait Socket {
         party_id: &str,
     ) -> Result<PartyJoinRequest, Self::Error>;
 
-    async fn promote_party_member(&self, party_id: &str, party_member: UserPresence);
+    async fn promote_party_member(&self, party_id: &str, party_member: UserPresence) -> Result<(), Self::Error>;
 
     async fn remove_chat_message(
         &self,
@@ -610,7 +650,7 @@ pub trait Socket {
 
     async fn remove_matchmaker_party(&self, party_id: &str, ticket: &str);
 
-    async fn remove_party_member(&self, party_id: &str, presence: UserPresence);
+    async fn remove_party_member(&self, party_id: &str, presence: UserPresence) -> Result<(), Self::Error>;
 
     async fn rpc(&self, func_id: &str, payload: &str) -> Result<ApiRpc, Self::Error>;
 

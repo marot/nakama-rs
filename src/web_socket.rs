@@ -99,6 +99,7 @@ impl<A: SocketAdapter> Clone for WebSocket<A> {
 }
 
 fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
+    trace!("handle_message: Received message: {:?}", msg);
     let mut result: Result<WebSocketMessageEnvelope, DeJsonErr> = DeJson::deserialize_json(&msg);
     let mut shared_state = shared_state.lock().unwrap();
     match result {
@@ -344,6 +345,7 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
 
     #[inline]
     fn send(&self, data: &str, reliable: bool) {
+        trace!("send: Sending message: {:?}", data);
         self.adapter
             .lock()
             .expect("panic inside other mutex!")
@@ -540,7 +542,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.shared_state.lock().unwrap().on_received_stream_state = Some(Box::new(callback));
     }
 
-    async fn accept_party_member(&self, party_id: &str, user_presence: &UserPresence) {
+    async fn accept_party_member(&self, party_id: &str, user_presence: &UserPresence) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_accept = Some(PartyAccept {
             party_id: party_id.to_owned(),
@@ -549,6 +551,9 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
         let json = envelope.serialize_json();
         self.send(&json, false);
+
+        self.wait_response(cid).await?;
+        Ok(())
     }
 
     async fn add_matchmaker(
@@ -801,7 +806,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         Ok(result_envelope.party_join_request.unwrap())
     }
 
-    async fn promote_party_member(&self, party_id: &str, party_member: UserPresence) {
+    async fn promote_party_member(&self, party_id: &str, party_member: UserPresence) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_promote = Some(PartyPromote {
             party_id: party_id.to_owned(),
@@ -810,6 +815,9 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
         let json = envelope.serialize_json();
         self.send(&json, false);
+
+        self.wait_response(cid).await?;
+        Ok(())
     }
 
     async fn remove_chat_message(
@@ -851,7 +859,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false);
     }
 
-    async fn remove_party_member(&self, party_id: &str, presence: UserPresence) {
+    async fn remove_party_member(&self, party_id: &str, presence: UserPresence) -> Result<(), Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_remove = Some(PartyRemove {
             party_id: party_id.to_owned(),
@@ -860,6 +868,9 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
         let json = envelope.serialize_json();
         self.send(&json, false);
+
+        self.wait_response(cid).await?;
+        Ok(())
     }
 
     async fn rpc(&self, func_id: &str, payload: &str) -> Result<ApiRpc, Self::Error> {
@@ -919,7 +930,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         envelope.party_data_send = Some(PartyDataSend {
             party_id: party_id.to_owned(),
             op_code,
-            data: data.to_vec(),
+            data: base64::encode(data),
         });
 
         let json = envelope.serialize_json();
