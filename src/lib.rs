@@ -3,8 +3,9 @@
 //! ## Authenticate
 //! 1. Build an instance of the client
 //! ```
-//! # use nakama_rs::client::{ Client};
+//! # use nakama_rs::client::Client;
 //! # use nakama_rs::http_adapter::RestHttpAdapter;
+//! # use nakama_rs::default_client::DefaultClient;
 //! # use futures::executor::block_on;
 //! # use std::collections::HashMap;
 //! let adapter = RestHttpAdapter::new("http://127.0.0.1", 7350);
@@ -12,8 +13,9 @@
 //! ```
 //! 2. Authenticate a user
 //! ```
-//! # use nakama_rs::client::{DefaultClient, Client};
+//! # use nakama_rs::client::Client;
 //! # use nakama_rs::http_adapter::RestHttpAdapter;
+//! # use nakama_rs::default_client::DefaultClient;
 //! # use futures::executor::block_on;
 //! # use std::collections::HashMap;
 //! # let adapter = RestHttpAdapter::new("http://127.0.0.1", 7350);
