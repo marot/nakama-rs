@@ -34,6 +34,8 @@ pub mod config;
 
 pub mod client;
 pub mod default_client;
+pub mod error;
+pub mod helper;
 pub mod http_adapter;
 pub mod matchmaker;
 pub mod session;

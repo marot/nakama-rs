@@ -10,13 +10,18 @@ pub struct Timestamp(String);
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Channel {
     pub id: String,
+    #[nserde(default)]
     pub presences: Vec<UserPresence>,
     #[nserde(rename = "self")]
     pub _self: UserPresence,
-    pub room_name: Option<String>,
-    pub group_id: Option<String>,
-    pub user_id_one: Option<String>,
-    pub user_id_two: Option<String>,
+    #[nserde(default)]
+    pub room_name: String,
+    #[nserde(default)]
+    pub group_id: String,
+    #[nserde(default)]
+    pub user_id_one: String,
+    #[nserde(default)]
+    pub user_id_two: String,
 }
 
 pub enum ChannelJoinType {
@@ -79,12 +84,18 @@ pub struct ChannelMesageRemove {
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct ChannelPresenceEvent {
     pub channel_id: String,
+    #[nserde(default)]
     pub joins: Vec<UserPresence>,
+    #[nserde(default)]
     pub leaves: Vec<UserPresence>,
-    pub room_name: Option<String>,
-    pub group_id: Option<String>,
-    pub user_id_one: Option<String>,
-    pub user_id_two: Option<String>,
+    #[nserde(default)]
+    pub room_name: String,
+    #[nserde(default)]
+    pub group_id: String,
+    #[nserde(default)]
+    pub user_id_one: String,
+    #[nserde(default)]
+    pub user_id_two: String,
 }
 
 pub enum ErrorCode {
@@ -153,7 +164,9 @@ pub struct MatchLeave {
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct MatchPresenceEvent {
     pub match_id: String,
+    #[nserde(default)]
     pub joins: Vec<UserPresence>,
+    #[nserde(default)]
     pub leaves: Vec<UserPresence>,
 }
 
@@ -329,7 +342,9 @@ pub struct StatusFollow {
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct StatusPresenceEvent {
+    #[nserde(default)]
     pub joins: Vec<UserPresence>,
+    #[nserde(default)]
     pub leaves: Vec<UserPresence>,
 }
 
@@ -362,14 +377,18 @@ pub struct StreamData {
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct StreamPresenceEvent {
     pub stream: Stream,
+    #[nserde(default)]
     pub joins: Vec<UserPresence>,
+    #[nserde(default)]
     pub leaves: Vec<UserPresence>,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct UserPresence {
+    #[nserde(default)]
     pub persistence: bool,
     pub session_id: String,
+    #[nserde(default)]
     pub status: String,
     pub username: String,
     pub user_id: String,

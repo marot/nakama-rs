@@ -6,13 +6,21 @@ use proc_macro::{Ident, TokenStream, TokenTree};
 pub fn nakama_main(attr: TokenStream, item: TokenStream) -> TokenStream {
     let result: TokenStream = format!(
         "
+        use simple_logger::SimpleLogger;
         use futures::executor::block_on;
+        use log::LevelFilter;
+
+
         fn main() {{
+            SimpleLogger::new()
+                .with_level(LevelFilter::Debug)
+                .with_module_level(\"#nakama_rs\", LevelFilter::Trace)
+                .init()
+                .unwrap();
+
            {}
-           let result = async {{
-                main().await
-           }};
-           block_on(result);
+
+           block_on(main());
         }} 
     ",
         item,

@@ -7,7 +7,6 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use futures::executor::block_on;
-use log::{trace, LevelFilter};
 use simple_logger::SimpleLogger;
 
 use nakama_rs::client::Client;

@@ -22,6 +22,7 @@ use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 
 use crate::default_client::str_slice_to_owned;
+use crate::web_socket_adapter::WebSocketAdapter;
 use oneshot;
 
 #[derive(Default)]
@@ -29,6 +30,7 @@ struct SharedState {
     cid: i64,
     wakers: HashMap<i64, Waker>,
     connected: Vec<oneshot::Sender<()>>,
+    status_presence: Vec<oneshot::Sender<StatusPresenceEvent>>,
     responses: HashMap<i64, oneshot::Sender<WebSocketMessageEnvelope>>,
     on_closed: Option<Box<dyn Fn() + Send + 'static>>,
     on_connected: Option<Box<dyn Fn() + Send + 'static>>,
@@ -151,6 +153,10 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
                 return;
             }
             if let Some(message) = event.status_presence_event {
+                shared_state.status_presence.drain(..).for_each(|tx| {
+                    tx.send(message.clone());
+                });
+
                 if let Some(ref cb) = shared_state.on_received_status_presence {
                     cb(message)
                 }
@@ -172,6 +178,13 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
         Err(err) => {
             error!("handle_message: Failed to parse json: {}", err);
         }
+    }
+}
+
+impl WebSocket<WebSocketAdapter> {
+    pub fn new_with_adapter() -> Self {
+        let adapter = WebSocketAdapter::new();
+        WebSocket::new(adapter)
     }
 }
 
@@ -272,6 +285,17 @@ impl<A: SocketAdapter> WebSocket<A> {
         {
             let mut shared_state = self.shared_state.lock().unwrap();
             shared_state.responses.insert(cid, tx);
+        }
+
+        rx.await.unwrap()
+    }
+
+    pub async fn status_presence(&self) -> StatusPresenceEvent {
+        let (tx, rx) = oneshot::channel::<StatusPresenceEvent>();
+
+        {
+            let mut shared_state = self.shared_state.lock().unwrap();
+            shared_state.status_presence.push(tx);
         }
 
         rx.await.unwrap()

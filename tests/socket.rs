@@ -1,0 +1,60 @@
+use futures::executor::block_on;
+use nakama_rs::client::Client;
+use nakama_rs::default_client::DefaultClient;
+use nakama_rs::error::NakamaError;
+use nakama_rs::helper::tick_socket;
+use nakama_rs::socket::Socket;
+use nakama_rs::web_socket::WebSocket;
+
+use nakama_rs::session::Session;
+use nakama_rs::web_socket_adapter::WebSocketAdapter;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::sync::mpsc;
+
+async fn socket_with_user(id: &str) -> (Session, WebSocket<WebSocketAdapter>) {
+    let client = DefaultClient::new_with_adapter();
+    let socket = WebSocket::new_with_adapter();
+    tick_socket(&socket);
+
+    let session = client
+        .authenticate_device(id, Some("SocketTestUser"), true, HashMap::new())
+        .await
+        .unwrap();
+    (session, socket)
+}
+
+#[test]
+fn test_status_presence_received_after_connect() {
+    let future = async {
+        let (mut session, socket) = socket_with_user("socket_test_user").await;
+
+        socket.connect(&mut session, true, -1).await;
+
+        let status_presence = socket.status_presence().await;
+        println!("Status presence: {:?}", status_presence);
+        assert_eq!(status_presence.joins.len(), 1);
+        assert_eq!(status_presence.joins[0].username, "SocketTestUser");
+        Ok(())
+    };
+
+    let result: Result<(), NakamaError> = block_on(future);
+    assert_eq!(result.is_ok(), true);
+}
+
+#[test]
+fn test_on_connected_triggered() {
+    let (tx, rx) = mpsc::channel::<()>();
+
+    block_on(async {
+        let (mut session, mut socket) = socket_with_user("socket_test_user").await;
+
+        socket.on_connected(move || {
+            tx.send(());
+        });
+
+        socket.connect(&mut session, true, -1).await;
+    });
+
+    rx.recv();
+}
