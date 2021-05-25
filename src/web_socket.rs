@@ -16,14 +16,41 @@ use async_trait::async_trait;
 use log::{error, trace};
 use nanoserde::{DeJson, DeJsonErr, SerJson};
 use std::collections::HashMap;
+use std::error;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 
 use crate::default_client::str_slice_to_owned;
-use crate::web_socket_adapter::WebSocketAdapter;
+use crate::web_socket_adapter::{WebSocketAdapter, WebSocketAdapterError};
 use oneshot;
+use oneshot::RecvError;
+use std::fmt::{Debug, Display, Formatter};
+
+pub enum WebSocketError<A: SocketAdapter> {
+    AdapterError(A::Error),
+    TimeoutError,
+    RecvError(RecvError),
+}
+
+impl<A: SocketAdapter> Debug for WebSocketError<A> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WebSocketError::AdapterError(err) => std::fmt::Debug::fmt(err, f),
+            WebSocketError::TimeoutError => std::fmt::Debug::fmt("Timeout", f),
+            WebSocketError::RecvError(err) => std::fmt::Debug::fmt(err, f),
+        }
+    }
+}
+
+impl<A: SocketAdapter> Display for WebSocketError<A> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(self, f)
+    }
+}
+
+impl<A: SocketAdapter> error::Error for WebSocketError<A> {}
 
 #[derive(Default)]
 struct SharedState {
@@ -32,6 +59,7 @@ struct SharedState {
     connected: Vec<oneshot::Sender<()>>,
     status_presence: Vec<oneshot::Sender<StatusPresenceEvent>>,
     responses: HashMap<i64, oneshot::Sender<WebSocketMessageEnvelope>>,
+    timeouts: HashMap<i64, i64>,
     on_closed: Option<Box<dyn Fn() + Send + 'static>>,
     on_connected: Option<Box<dyn Fn() + Send + 'static>>,
     on_received_channel_message: Option<Box<dyn Fn(ApiChannelMessage) + Send + 'static>>,
@@ -188,7 +216,7 @@ impl WebSocket<WebSocketAdapter> {
     }
 }
 
-impl<A: SocketAdapter> WebSocket<A> {
+impl<A: SocketAdapter + Send> WebSocket<A> {
     pub fn new(adapter: A) -> Self {
         let web_socket = WebSocket {
             adapter: Arc::new(Mutex::new(adapter)),
@@ -253,6 +281,21 @@ impl<A: SocketAdapter> WebSocket<A> {
             .lock()
             .expect("panic inside other mutex!")
             .tick();
+
+        let mut shared_state = self.shared_state.lock().unwrap();
+
+        // TODO: Use a clock!
+        let (timeout_finished, timeouts) = shared_state
+            .timeouts
+            .iter()
+            .map(|(k, v)| (*k, *v - 16))
+            .partition(|&(_, timeout)| {
+                return timeout <= 0;
+            });
+        shared_state.timeouts = timeouts;
+        timeout_finished.iter().for_each(|(k, _)| {
+            shared_state.responses.remove(k);
+        })
     }
 
     fn make_envelope_with_cid(&self) -> (WebSocketMessageEnvelope, i64) {
@@ -279,15 +322,19 @@ impl<A: SocketAdapter> WebSocket<A> {
             .send(data, reliable);
     }
 
-    async fn wait_response(&self, cid: i64) -> WebSocketMessageEnvelope {
+    async fn wait_response(
+        &self,
+        cid: i64,
+    ) -> Result<WebSocketMessageEnvelope, <Self as Socket>::Error> {
         let (tx, rx) = oneshot::channel::<WebSocketMessageEnvelope>();
 
         {
             let mut shared_state = self.shared_state.lock().unwrap();
             shared_state.responses.insert(cid, tx);
+            shared_state.timeouts.insert(cid, 2000);
         }
 
-        rx.await.unwrap()
+        rx.await.map_err(|err| WebSocketError::RecvError(err))
     }
 
     pub async fn status_presence(&self) -> StatusPresenceEvent {
@@ -304,6 +351,8 @@ impl<A: SocketAdapter> WebSocket<A> {
 
 #[async_trait]
 impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
+    type Error = WebSocketError<A>;
+
     fn on_closed<T>(&mut self, callback: T)
     where
         T: Fn() + Send + 'static,
@@ -459,7 +508,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         max_count: Option<i32>,
         string_properties: HashMap<String, String>,
         numeric_properties: HashMap<String, f64>,
-    ) -> MatchmakerTicket {
+    ) -> Result<MatchmakerTicket, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.matchmaker_add = Some(MatchmakerAdd {
             query: query.to_owned(),
@@ -472,9 +521,9 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let envelope = self.wait_response(cid).await;
+        let envelope = self.wait_response(cid).await?;
 
-        envelope.matchmaker_ticket.unwrap()
+        Ok(envelope.matchmaker_ticket.unwrap())
     }
 
     async fn add_matchmaker_party(
@@ -485,7 +534,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         max_count: i32,
         string_properties: HashMap<String, String>,
         numeric_properties: HashMap<String, f64>,
-    ) -> PartyMatchmakerTicket {
+    ) -> Result<PartyMatchmakerTicket, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_matchmaker_add = Some(PartyMatchmakerAdd {
             query: query.to_owned(),
@@ -499,9 +548,9 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let envelope = self.wait_response(cid).await;
+        let envelope = self.wait_response(cid).await?;
 
-        envelope.party_matchmaker_ticket.unwrap()
+        Ok(envelope.party_matchmaker_ticket.unwrap())
     }
 
     async fn close_party(&self, party_id: &str) {
@@ -539,30 +588,34 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         rx.await;
     }
 
-    async fn create_match(&self) -> Match {
+    async fn create_match(&self) -> Result<Match, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.match_create = Some(MatchCreate {});
 
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let envelope = self.wait_response(cid).await;
+        let envelope = self.wait_response(cid).await?;
 
-        envelope.new_match.unwrap()
+        Ok(envelope.new_match.unwrap())
     }
 
-    async fn create_party(&self, open: bool, max_size: i32) -> Party {
+    async fn create_party(&self, open: bool, max_size: i32) -> Result<Party, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_create = Some(PartyCreate { max_size, open });
 
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let result_envelope = self.wait_response(cid).await;
-        result_envelope.party.unwrap()
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.party.unwrap())
     }
 
-    async fn follow_users(&self, user_ids: &[&str], usernames: &[&str]) -> Status {
+    async fn follow_users(
+        &self,
+        user_ids: &[&str],
+        usernames: &[&str],
+    ) -> Result<Status, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.status_follow = Some(StatusFollow {
             user_ids: str_slice_to_owned(user_ids),
@@ -572,8 +625,8 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let result_envelope = self.wait_response(cid).await;
-        result_envelope.status.unwrap()
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.status.unwrap())
     }
 
     async fn join_chat(
@@ -582,7 +635,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         channel_type: i32,
         persistence: bool,
         hidden: bool,
-    ) -> Channel {
+    ) -> Result<Channel, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.channel_join = Some(ChannelJoin {
             channel_type,
@@ -594,8 +647,8 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let result_envelope = self.wait_response(cid).await;
-        result_envelope.channel.unwrap()
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.channel.unwrap())
     }
 
     async fn join_party(&self, party_id: &str) {
@@ -608,7 +661,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false);
     }
 
-    async fn join_match(&self, matched: MatchmakerMatched) -> Match {
+    async fn join_match(&self, matched: MatchmakerMatched) -> Result<Match, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.match_join = Some(MatchJoin {
             token: matched.token,
@@ -619,11 +672,15 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let result_envelope = self.wait_response(cid).await;
-        result_envelope.new_match.unwrap()
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.new_match.unwrap())
     }
 
-    async fn join_match_by_id(&self, match_id: &str, metadata: HashMap<String, String>) -> Match {
+    async fn join_match_by_id(
+        &self,
+        match_id: &str,
+        metadata: HashMap<String, String>,
+    ) -> Result<Match, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.match_join = Some(MatchJoin {
             match_id: Some(match_id.to_owned()),
@@ -634,8 +691,8 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let result_envelope = self.wait_response(cid).await;
-        result_envelope.new_match.unwrap()
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.new_match.unwrap())
     }
 
     async fn leave_chat(&self, channel_id: &str) {
@@ -668,7 +725,10 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false);
     }
 
-    async fn list_party_join_requests(&self, party_id: &str) -> PartyJoinRequest {
+    async fn list_party_join_requests(
+        &self,
+        party_id: &str,
+    ) -> Result<PartyJoinRequest, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_join_request_list = Some(PartyJoinRequestList {
             party_id: party_id.to_owned(),
@@ -677,8 +737,8 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let result_envelope = self.wait_response(cid).await;
-        result_envelope.party_join_request.unwrap()
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.party_join_request.unwrap())
     }
 
     async fn promote_party_member(&self, party_id: &str, party_member: UserPresence) {
@@ -692,7 +752,11 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false);
     }
 
-    async fn remove_chat_message(&self, channel_id: &str, message_id: &str) -> ChannelMessageAck {
+    async fn remove_chat_message(
+        &self,
+        channel_id: &str,
+        message_id: &str,
+    ) -> Result<ChannelMessageAck, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.channel_message_remove = Some(ChannelMesageRemove {
             channel_id: channel_id.to_owned(),
@@ -702,8 +766,8 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let result_envelope = self.wait_response(cid).await;
-        result_envelope.channel_message_ack.unwrap()
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.channel_message_ack.unwrap())
     }
 
     async fn remove_matchmaker(&self, ticket: &str) {
@@ -738,7 +802,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false);
     }
 
-    async fn rpc(&self, func_id: &str, payload: &str) -> ApiRpc {
+    async fn rpc(&self, func_id: &str, payload: &str) -> Result<ApiRpc, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.rpc = Some(ApiRpc {
             id: func_id.to_owned(),
@@ -749,11 +813,11 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let result_envelope = self.wait_response(cid).await;
-        result_envelope.rpc.unwrap()
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.rpc.unwrap())
     }
 
-    async fn rpc_bytes(&self, func_id: &str, payload: &[u8]) -> ApiRpc {
+    async fn rpc_bytes(&self, func_id: &str, payload: &[u8]) -> Result<ApiRpc, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.rpc = Some(ApiRpc {
             id: func_id.to_owned(),
@@ -765,8 +829,8 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let result_envelope = self.wait_response(cid).await;
-        result_envelope.rpc.unwrap()
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.rpc.unwrap())
     }
 
     async fn send_match_state(
@@ -817,7 +881,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         channel_id: &str,
         message_id: &str,
         content: &str,
-    ) -> ChannelMessageAck {
+    ) -> Result<ChannelMessageAck, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.channel_message_update = Some(ChannelMesageUpdate {
             channel_id: channel_id.to_owned(),
@@ -828,8 +892,8 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        let result_envelope = self.wait_response(cid).await;
-        result_envelope.channel_message_ack.unwrap()
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.channel_message_ack.unwrap())
     }
 
     async fn update_status(&self, status: &str) {
@@ -842,7 +906,11 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false);
     }
 
-    async fn write_chat_message(&self, channel_id: &str, content: &str) {
+    async fn write_chat_message(
+        &self,
+        channel_id: &str,
+        content: &str,
+    ) -> Result<ChannelMessageAck, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.channel_message_send = Some(ChannelMessageSend {
             channel_id: channel_id.to_owned(),
@@ -852,8 +920,8 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         let json = envelope.serialize_json();
         self.send(&json, false);
 
-        // TODO: Message ack
-        self.wait_response(cid).await;
+        let result_envelope = self.wait_response(cid).await?;
+        Ok(result_envelope.channel_message_ack.unwrap())
     }
 }
 

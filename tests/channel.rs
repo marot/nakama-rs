@@ -44,7 +44,7 @@ fn test_channel_room_creation() {
     let future = async {
         let (socket1, socket2) = sockets_with_users("socketchannel1", "socketchannel2").await;
         let channel = socket1.join_chat("MyRoom", 1, false, false).await;
-        assert_eq!(channel.room_name, "MyRoom".to_owned())
+        assert_eq!(channel.unwrap().room_name, "MyRoom".to_owned())
     };
 
     block_on(future);
@@ -54,13 +54,12 @@ fn test_channel_room_creation() {
 fn test_channel_direct_message_creation() {
     let future = async {
         let (socket1, mut socket2) = sockets_with_users("socketchannel1", "socketchannel2").await;
-        todo!();
         let channel = socket1.join_chat("socketchannel2", 2, false, false).await;
         socket2.on_received_channel_presence(|presence| {
             println!("{:?}", presence);
         });
         sleep(Duration::from_secs(1));
-        assert_eq!(channel.room_name, "MyRoom".to_owned())
+        assert_eq!(channel.unwrap().room_name, "MyRoom".to_owned())
     };
 
     block_on(future);

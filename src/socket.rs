@@ -3,6 +3,7 @@ use crate::session::Session;
 use async_trait::async_trait;
 use nanoserde::{DeJson, DeJsonErr, SerJson};
 use std::collections::HashMap;
+use std::error;
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Timestamp(String);
@@ -449,6 +450,8 @@ pub struct WebSocketMessageEnvelope {
 
 #[async_trait]
 pub trait Socket {
+    type Error: error::Error;
+
     // It would make sense to have a future here
     fn on_closed<T>(&mut self, callback: T)
     where
@@ -527,7 +530,7 @@ pub trait Socket {
         max_count: Option<i32>,
         string_properties: HashMap<String, String>,
         numeric_properties: HashMap<String, f64>,
-    ) -> MatchmakerTicket;
+    ) -> Result<MatchmakerTicket, Self::Error>;
 
     async fn add_matchmaker_party(
         &self,
@@ -537,7 +540,7 @@ pub trait Socket {
         max_count: i32,
         string_properties: HashMap<String, String>,
         numeric_properties: HashMap<String, f64>,
-    ) -> PartyMatchmakerTicket;
+    ) -> Result<PartyMatchmakerTicket, Self::Error>;
 
     async fn close_party(&self, party_id: &str);
 
@@ -545,11 +548,15 @@ pub trait Socket {
 
     async fn connect(&self, session: &mut Session, appear_online: bool, connect_timeout: i32);
 
-    async fn create_match(&self) -> Match;
+    async fn create_match(&self) -> Result<Match, Self::Error>;
 
-    async fn create_party(&self, open: bool, max_size: i32) -> Party;
+    async fn create_party(&self, open: bool, max_size: i32) -> Result<Party, Self::Error>;
 
-    async fn follow_users(&self, user_ids: &[&str], usernames: &[&str]) -> Status;
+    async fn follow_users(
+        &self,
+        user_ids: &[&str],
+        usernames: &[&str],
+    ) -> Result<Status, Self::Error>;
 
     async fn join_chat(
         &self,
@@ -557,13 +564,17 @@ pub trait Socket {
         channel_type: i32,
         persistence: bool,
         hidden: bool,
-    ) -> Channel;
+    ) -> Result<Channel, Self::Error>;
 
     async fn join_party(&self, party_id: &str);
 
-    async fn join_match(&self, matched: MatchmakerMatched) -> Match;
+    async fn join_match(&self, matched: MatchmakerMatched) -> Result<Match, Self::Error>;
 
-    async fn join_match_by_id(&self, match_id: &str, metadata: HashMap<String, String>) -> Match;
+    async fn join_match_by_id(
+        &self,
+        match_id: &str,
+        metadata: HashMap<String, String>,
+    ) -> Result<Match, Self::Error>;
 
     async fn leave_chat(&self, channel_id: &str);
 
@@ -571,11 +582,18 @@ pub trait Socket {
 
     async fn leave_party(&self, party_id: &str);
 
-    async fn list_party_join_requests(&self, party_id: &str) -> PartyJoinRequest;
+    async fn list_party_join_requests(
+        &self,
+        party_id: &str,
+    ) -> Result<PartyJoinRequest, Self::Error>;
 
     async fn promote_party_member(&self, party_id: &str, party_member: UserPresence);
 
-    async fn remove_chat_message(&self, channel_id: &str, message_id: &str) -> ChannelMessageAck;
+    async fn remove_chat_message(
+        &self,
+        channel_id: &str,
+        message_id: &str,
+    ) -> Result<ChannelMessageAck, Self::Error>;
 
     async fn remove_matchmaker(&self, ticket: &str);
 
@@ -583,9 +601,9 @@ pub trait Socket {
 
     async fn remove_party_member(&self, party_id: &str, presence: UserPresence);
 
-    async fn rpc(&self, func_id: &str, payload: &str) -> ApiRpc;
+    async fn rpc(&self, func_id: &str, payload: &str) -> Result<ApiRpc, Self::Error>;
 
-    async fn rpc_bytes(&self, func_id: &str, payload: &[u8]) -> ApiRpc;
+    async fn rpc_bytes(&self, func_id: &str, payload: &[u8]) -> Result<ApiRpc, Self::Error>;
 
     async fn send_match_state(
         &self,
@@ -604,9 +622,13 @@ pub trait Socket {
         channel_id: &str,
         message_id: &str,
         content: &str,
-    ) -> ChannelMessageAck;
+    ) -> Result<ChannelMessageAck, Self::Error>;
 
     async fn update_status(&self, status: &str);
 
-    async fn write_chat_message(&self, channel_id: &str, content: &str);
+    async fn write_chat_message(
+        &self,
+        channel_id: &str,
+        content: &str,
+    ) -> Result<ChannelMessageAck, Self::Error>;
 }

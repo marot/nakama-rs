@@ -1,11 +1,11 @@
 use crate::socket_adapter::SocketAdapter;
+use log::{debug, error, trace, Level};
 use qws;
+use qws::{CloseCode, Handshake};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::sync::mpsc::{Receiver, Sender, SendError};
-use std::sync::{mpsc};
-use log::{trace, error, debug, Level};
-use qws::{Handshake, CloseCode};
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, SendError, Sender};
 
 enum Message {
     StringMessage(String),
@@ -16,7 +16,7 @@ enum Message {
 pub struct WebSocketAdapter {
     on_connected: Option<Box<dyn Fn() + Send + 'static>>,
     on_closed: Option<Box<dyn Fn() + Send + 'static>>,
-    on_received: Option<Box<dyn Fn(Result<String, WebSocketError>) + Send + 'static>>,
+    on_received: Option<Box<dyn Fn(Result<String, WebSocketAdapterError>) + Send + 'static>>,
 
     rx_message: Option<Receiver<Message>>,
     tx_message: Option<qws::Sender>,
@@ -93,27 +93,27 @@ impl WebSocketAdapter {
 }
 
 #[derive(Debug)]
-pub enum WebSocketError {
+pub enum WebSocketAdapterError {
     IOError,
     WebSocketError(qws::Error),
 }
 
-impl From<qws::Error> for WebSocketError {
+impl From<qws::Error> for WebSocketAdapterError {
     fn from(err: qws::Error) -> Self {
-        WebSocketError::WebSocketError(err)
+        WebSocketAdapterError::WebSocketError(err)
     }
 }
 
-impl Display for WebSocketError {
+impl Display for WebSocketAdapterError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         std::fmt::Debug::fmt(self, f)
     }
 }
 
-impl Error for WebSocketError {}
+impl Error for WebSocketAdapterError {}
 
 impl SocketAdapter for WebSocketAdapter {
-    type Error = WebSocketError;
+    type Error = WebSocketAdapterError;
 
     fn on_connected<T>(&mut self, callback: T)
     where
@@ -131,7 +131,7 @@ impl SocketAdapter for WebSocketAdapter {
 
     fn on_received<T>(&mut self, callback: T)
     where
-        T: Fn(Result<String, WebSocketError>) + Send + 'static,
+        T: Fn(Result<String, WebSocketAdapterError>) + Send + 'static,
     {
         self.on_received = Some(Box::new(callback));
     }
@@ -174,8 +174,9 @@ impl SocketAdapter for WebSocketAdapter {
     fn send(&self, data: &str, _reliable: bool) -> Result<(), Self::Error> {
         if let Some(ref sender) = self.tx_message {
             println!("Sending {:?}", data);
-            return sender.send(qws::Message::Text(data.to_owned()))
-                .map_err(|err| err.into())
+            return sender
+                .send(qws::Message::Text(data.to_owned()))
+                .map_err(|err| err.into());
         }
 
         Ok(())
