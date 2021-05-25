@@ -16,6 +16,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: isbang/compose-action@v1.0.0
+      with:
+        compose-file: './examples/docker-compose.yml'
+        down-flags: '--volumes'
     - name: Build
       run: cargo build --verbose
     - name: Run tests
