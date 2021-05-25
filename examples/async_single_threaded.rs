@@ -72,7 +72,12 @@ fn main() {
                     }
                     JoiningChat => {
                         web_socket.join_chat("MyRoom", 1, false, false).await;
-                        channel = Some(web_socket2.join_chat("MyRoom", 1, false, false).await);
+                        channel = Some(
+                            web_socket2
+                                .join_chat("MyRoom", 1, false, false)
+                                .await
+                                .unwrap(),
+                        );
                         state.replace(JoinedChat);
                     }
                     SendingMessage => {

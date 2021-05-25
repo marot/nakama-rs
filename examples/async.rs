@@ -9,6 +9,7 @@ use std::time::Duration;
 use futures::executor::block_on;
 use simple_logger::SimpleLogger;
 
+use log::{trace, LevelFilter};
 use nakama_rs::client::Client;
 use nakama_rs::default_client::DefaultClient;
 use nakama_rs::http_adapter::RestHttpAdapter;
@@ -131,8 +132,10 @@ fn main() {
         let web_socket2 = web_socket2.clone();
         async move {
             web_socket.join_chat("MyRoom", 1, false, false).await;
-            // TODO: This should be Result<Channel, Error> as there are no exceptions in Rust.
-            let channel = web_socket2.join_chat("MyRoom", 1, false, false).await;
+            let channel = web_socket2
+                .join_chat("MyRoom", 1, false, false)
+                .await
+                .unwrap();
             web_socket2
                 .write_chat_message(&channel.id, "{\"text\":\"Hello World!\"}")
                 .await;

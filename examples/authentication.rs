@@ -4,7 +4,6 @@ use nakama_rs::default_client::{DefaultClient, DefaultClientError};
 use nakama_rs::http_adapter::RestHttpAdapter;
 use nakama_rs::http_adapter::RestHttpError::HttpError;
 use nakama_rs::session::Session;
-use simple_logger::SimpleLogger;
 use std::collections::HashMap;
 use std::io::Error;
 
