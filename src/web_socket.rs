@@ -1,6 +1,16 @@
 use crate::api::{ApiChannelMessage, ApiNotification, ApiRpc};
 use crate::session::Session;
-use crate::socket::{Channel, ChannelJoin, Match, MatchCreate, Socket, WebSocketMessageEnvelope, ChannelMessageSend, PartyLeader, PartyMatchmakerTicket, PartyClose, PartyData, MatchmakerMatched, Error, UserPresence, MatchData, MatchPresenceEvent, StatusPresenceEvent, PartyPresenceEvent, ChannelPresenceEvent, StreamPresenceEvent, StreamData, PartyJoinRequest, PartyAccept, Status, Party, ChannelMessageAck, MatchmakerTicket, MatchmakerAdd, PartyMatchmakerAdd, PartyCreate, StatusFollow, StatusUpdate, ChannelMesageUpdate, StatusUnfollow, PartyDataSend, MatchDataSend, PartyRemove, PartyMatchmakerRemove, MatchmakerRemove, ChannelMesageRemove, PartyPromote, PartyJoinRequestList, PartyLeave, MatchLeave, ChannelLeave, MatchJoin, PartyJoin};
+use crate::socket::{
+    Channel, ChannelJoin, ChannelLeave, ChannelMesageRemove, ChannelMesageUpdate,
+    ChannelMessageAck, ChannelMessageSend, ChannelPresenceEvent, Error, Match, MatchCreate,
+    MatchData, MatchDataSend, MatchJoin, MatchLeave, MatchPresenceEvent, MatchmakerAdd,
+    MatchmakerMatched, MatchmakerRemove, MatchmakerTicket, Party, PartyAccept, PartyClose,
+    PartyCreate, PartyData, PartyDataSend, PartyJoin, PartyJoinRequest, PartyJoinRequestList,
+    PartyLeader, PartyLeave, PartyMatchmakerAdd, PartyMatchmakerRemove, PartyMatchmakerTicket,
+    PartyPresenceEvent, PartyPromote, PartyRemove, Socket, Status, StatusFollow,
+    StatusPresenceEvent, StatusUnfollow, StatusUpdate, StreamData, StreamPresenceEvent,
+    UserPresence, WebSocketMessageEnvelope,
+};
 use crate::socket_adapter::SocketAdapter;
 use async_trait::async_trait;
 use log::{error, trace};
@@ -11,14 +21,32 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 
-use oneshot;
 use crate::default_client::str_slice_to_owned;
+use oneshot;
 
+#[derive(Default)]
 struct SharedState {
     cid: i64,
     wakers: HashMap<i64, Waker>,
     connected: Vec<oneshot::Sender<()>>,
     responses: HashMap<i64, oneshot::Sender<WebSocketMessageEnvelope>>,
+    on_closed: Option<Box<dyn Fn() + Send + 'static>>,
+    on_connected: Option<Box<dyn Fn() + Send + 'static>>,
+    on_received_channel_message: Option<Box<dyn Fn(ApiChannelMessage) + Send + 'static>>,
+    on_received_channel_presence: Option<Box<dyn Fn(ChannelPresenceEvent) + Send + 'static>>,
+    on_received_error: Option<Box<dyn Fn(Error) + Send + 'static>>,
+    on_received_matchmaker_matched: Option<Box<dyn Fn(MatchmakerMatched) + Send + 'static>>,
+    on_received_match_state: Option<Box<dyn Fn(MatchData) + Send + 'static>>,
+    on_received_match_presence: Option<Box<dyn Fn(MatchPresenceEvent) + Send + 'static>>,
+    on_received_notification: Option<Box<dyn Fn(ApiNotification) + Send + 'static>>,
+    on_received_party_close: Option<Box<dyn Fn(PartyClose) + Send + 'static>>,
+    on_received_party_data: Option<Box<dyn Fn(PartyData) + Send + 'static>>,
+    on_received_party_join_request: Option<Box<dyn Fn(PartyJoinRequest) + Send + 'static>>,
+    on_received_party_leader: Option<Box<dyn Fn(PartyLeader) + Send + 'static>>,
+    on_received_party_presence: Option<Box<dyn Fn(PartyPresenceEvent) + Send + 'static>>,
+    on_received_status_presence: Option<Box<dyn Fn(StatusPresenceEvent) + Send + 'static>>,
+    on_received_stream_presence: Option<Box<dyn Fn(StreamPresenceEvent) + Send + 'static>>,
+    on_received_stream_state: Option<Box<dyn Fn(StreamData) + Send + 'static>>,
 }
 
 pub struct WebSocket<A: SocketAdapter> {
@@ -36,16 +64,109 @@ impl<A: SocketAdapter> Clone for WebSocket<A> {
 }
 
 fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
-    let result: Result<WebSocketMessageEnvelope, DeJsonErr> = DeJson::deserialize_json(&msg);
+    let mut result: Result<WebSocketMessageEnvelope, DeJsonErr> = DeJson::deserialize_json(&msg);
+    let mut shared_state = shared_state.lock().unwrap();
     match result {
         Ok(event) => {
             if let Some(ref cid) = event.cid {
                 trace!("handle_message: Received message with cid");
-                let mut state = shared_state.lock().expect("Panic inside other mutex!");
                 let cid = cid.parse::<i64>().unwrap();
-                if let Some(response_event) = state.responses.remove(&cid) {
+                if let Some(response_event) = shared_state.responses.remove(&cid) {
                     response_event.send(event);
                 }
+                return;
+            }
+            if let Some(message) = event.channel_message {
+                if let Some(ref cb) = shared_state.on_received_channel_message {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.channel_presence_event {
+                if let Some(ref cb) = shared_state.on_received_channel_presence {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.error {
+                if let Some(ref cb) = shared_state.on_received_error {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.matchmaker_matched {
+                if let Some(ref cb) = shared_state.on_received_matchmaker_matched {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.match_data {
+                if let Some(ref cb) = shared_state.on_received_match_state {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.match_presence_event {
+                if let Some(ref cb) = shared_state.on_received_match_presence {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(mut message) = event.notifications {
+                if let Some(ref cb) = shared_state.on_received_notification {
+                    for message in message.notifications.drain(..) {
+                        cb(message)
+                    }
+                }
+                return;
+            }
+            if let Some(message) = event.party_close {
+                if let Some(ref cb) = shared_state.on_received_party_close {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.party_data {
+                if let Some(ref cb) = shared_state.on_received_party_data {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.party_join_request {
+                if let Some(ref cb) = shared_state.on_received_party_join_request {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.party_leader {
+                if let Some(ref cb) = shared_state.on_received_party_leader {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.party_presence_event {
+                if let Some(ref cb) = shared_state.on_received_party_presence {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.status_presence_event {
+                if let Some(ref cb) = shared_state.on_received_status_presence {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.stream_presence_event {
+                if let Some(ref cb) = shared_state.on_received_stream_presence {
+                    cb(message)
+                }
+                return;
+            }
+            if let Some(message) = event.stream_data {
+                if let Some(ref cb) = shared_state.on_received_stream_state {
+                    cb(message)
+                }
+                return;
             }
         }
         Err(err) => {
@@ -59,10 +180,7 @@ impl<A: SocketAdapter> WebSocket<A> {
         let web_socket = WebSocket {
             adapter: Arc::new(Mutex::new(adapter)),
             shared_state: Arc::new(Mutex::new(SharedState {
-                cid: 1,
-                wakers: HashMap::new(),
-                responses: HashMap::new(),
-                connected: vec![],
+                ..Default::default()
             })),
         };
 
@@ -84,15 +202,35 @@ impl<A: SocketAdapter> WebSocket<A> {
                 }
             });
 
-        web_socket.adapter.lock().unwrap()
-            .on_connected({
+        {
+            let mut adapter = web_socket.adapter.lock().unwrap();
+            adapter.on_closed({
                 let shared_state = web_socket.shared_state.clone();
                 move || {
-                    shared_state.lock().unwrap()
-                        .connected.drain(..)
-                        .for_each(|sender| { sender.send(()); });
+                    if let Some(ref cb) = shared_state.lock().unwrap().on_closed {
+                        cb()
+                    }
                 }
             });
+
+            adapter.on_connected({
+                let shared_state = web_socket.shared_state.clone();
+                move || {
+                    if let Some(ref cb) = shared_state.lock().unwrap().on_connected {
+                        cb()
+                    }
+
+                    shared_state
+                        .lock()
+                        .unwrap()
+                        .connected
+                        .drain(..)
+                        .for_each(|sender| {
+                            sender.send(());
+                        });
+                }
+            });
+        }
 
         web_socket
     }
@@ -122,7 +260,9 @@ impl<A: SocketAdapter> WebSocket<A> {
 
     #[inline]
     fn send(&self, data: &str, reliable: bool) {
-        self.adapter.lock().expect("panic inside other mutex!")
+        self.adapter
+            .lock()
+            .expect("panic inside other mutex!")
             .send(data, reliable);
     }
 
@@ -144,91 +284,137 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     where
         T: Fn() + Send + 'static,
     {
-        todo!()
+        self.shared_state.lock().unwrap().on_closed = Some(Box::new(callback));
     }
 
-    fn on_connected<T>(&mut self, _callback: T)
+    fn on_connected<T>(&mut self, callback: T)
     where
-        T: Fn() + 'static,
+        T: Fn() + Send + 'static,
     {
-        todo!()
+        self.shared_state.lock().unwrap().on_connected = Some(Box::new(callback));
     }
 
-    fn on_received_channel_message<T>(&mut self, _callback: T)
+    fn on_received_channel_message<T>(&mut self, callback: T)
     where
-        T: Fn(ApiChannelMessage) + 'static,
+        T: Fn(ApiChannelMessage) + Send + 'static,
     {
-        todo!()
+        self.shared_state
+            .lock()
+            .unwrap()
+            .on_received_channel_message = Some(Box::new(callback));
     }
 
-    fn on_received_channel_presence<T>(&mut self, callback: T) where
-        T: Fn(ChannelPresenceEvent) + 'static {
-        todo!()
+    fn on_received_channel_presence<T>(&mut self, callback: T)
+    where
+        T: Fn(ChannelPresenceEvent) + Send + 'static,
+    {
+        self.shared_state
+            .lock()
+            .unwrap()
+            .on_received_channel_presence = Some(Box::new(callback));
     }
 
-    fn on_received_error<T>(&mut self, callback: T) where
-        T: Fn(Error) + 'static {
-        todo!()
+    fn on_received_error<T>(&mut self, callback: T)
+    where
+        T: Fn(Error) + Send + 'static,
+    {
+        self.shared_state.lock().unwrap().on_received_error = Some(Box::new(callback));
     }
 
-    fn on_received_matchmaker_matched<T>(&mut self, callback: T) where
-        T: Fn(MatchmakerMatched) + 'static {
-        todo!()
+    fn on_received_matchmaker_matched<T>(&mut self, callback: T)
+    where
+        T: Fn(MatchmakerMatched) + Send + 'static,
+    {
+        self.shared_state
+            .lock()
+            .unwrap()
+            .on_received_matchmaker_matched = Some(Box::new(callback));
     }
 
-    fn on_received_match_state<T>(&mut self, callback: T) where
-        T: Fn(MatchData) + 'static {
-        todo!()
+    fn on_received_match_state<T>(&mut self, callback: T)
+    where
+        T: Fn(MatchData) + Send + 'static,
+    {
+        self.shared_state.lock().unwrap().on_received_match_state = Some(Box::new(callback));
     }
 
-    fn on_received_match_presence<T>(&mut self, callback: T) where
-        T: Fn(MatchPresenceEvent) + 'static {
-        todo!()
+    fn on_received_match_presence<T>(&mut self, callback: T)
+    where
+        T: Fn(MatchPresenceEvent) + Send + 'static,
+    {
+        self.shared_state.lock().unwrap().on_received_match_presence = Some(Box::new(callback));
     }
 
-    fn on_received_notification<T>(&mut self, callback: T) where
-        T: Fn(ApiNotification) + 'static {
-        todo!()
+    fn on_received_notification<T>(&mut self, callback: T)
+    where
+        T: Fn(ApiNotification) + Send + 'static,
+    {
+        self.shared_state.lock().unwrap().on_received_notification = Some(Box::new(callback));
     }
 
-    fn on_received_party_close<T>(&mut self, callback: T) where
-        T: Fn(PartyClose) + 'static {
-        todo!()
+    fn on_received_party_close<T>(&mut self, callback: T)
+    where
+        T: Fn(PartyClose) + Send + 'static,
+    {
+        self.shared_state.lock().unwrap().on_received_party_close = Some(Box::new(callback));
     }
 
-    fn on_received_party_data<T>(&mut self, callback: T) where
-        T: Fn(PartyData) + 'static {
-        todo!()
+    fn on_received_party_data<T>(&mut self, callback: T)
+    where
+        T: Fn(PartyData) + Send + 'static,
+    {
+        self.shared_state.lock().unwrap().on_received_party_data = Some(Box::new(callback));
     }
 
-    fn on_received_party_join_request<T>(&mut self, callback: T) where
-        T: Fn(PartyJoinRequest) + 'static {
-        todo!()
+    fn on_received_party_join_request<T>(&mut self, callback: T)
+    where
+        T: Fn(PartyJoinRequest) + Send + 'static,
+    {
+        self.shared_state
+            .lock()
+            .unwrap()
+            .on_received_party_join_request = Some(Box::new(callback));
     }
 
-    fn on_received_party_leader<T>(&mut self, callback: T) where
-        T: Fn(PartyLeader) + 'static {
-        todo!()
+    fn on_received_party_leader<T>(&mut self, callback: T)
+    where
+        T: Fn(PartyLeader) + Send + 'static,
+    {
+        self.shared_state.lock().unwrap().on_received_party_leader = Some(Box::new(callback));
     }
 
-    fn on_received_party_presence<T>(&mut self, callback: T) where
-        T: Fn(PartyPresenceEvent) + 'static {
-        todo!()
+    fn on_received_party_presence<T>(&mut self, callback: T)
+    where
+        T: Fn(PartyPresenceEvent) + Send + 'static,
+    {
+        self.shared_state.lock().unwrap().on_received_party_presence = Some(Box::new(callback));
     }
 
-    fn on_received_status_presence<T>(&mut self, callback: T) where
-        T: Fn(StatusPresenceEvent) + 'static {
-        todo!()
+    fn on_received_status_presence<T>(&mut self, callback: T)
+    where
+        T: Fn(StatusPresenceEvent) + Send + 'static,
+    {
+        self.shared_state
+            .lock()
+            .unwrap()
+            .on_received_status_presence = Some(Box::new(callback));
     }
 
-    fn on_received_stream_presence<T>(&mut self, callback: T) where
-        T: Fn(StreamPresenceEvent) + 'static {
-        todo!()
+    fn on_received_stream_presence<T>(&mut self, callback: T)
+    where
+        T: Fn(StreamPresenceEvent) + Send + 'static,
+    {
+        self.shared_state
+            .lock()
+            .unwrap()
+            .on_received_stream_presence = Some(Box::new(callback));
     }
 
-    fn on_received_stream_state<T>(&mut self, callback: T) where
-        T: Fn(StreamData) + 'static {
-        todo!()
+    fn on_received_stream_state<T>(&mut self, callback: T)
+    where
+        T: Fn(StreamData) + Send + 'static,
+    {
+        self.shared_state.lock().unwrap().on_received_stream_state = Some(Box::new(callback));
     }
 
     async fn accept_party_member(&self, party_id: &str, user_presence: &UserPresence) {
@@ -242,7 +428,14 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false);
     }
 
-    async fn add_matchmaker(&self, query: &str, min_count: Option<i32>, max_count: Option<i32>, string_properties: HashMap<String, String>, numeric_properties: HashMap<String, f64>) -> MatchmakerTicket {
+    async fn add_matchmaker(
+        &self,
+        query: &str,
+        min_count: Option<i32>,
+        max_count: Option<i32>,
+        string_properties: HashMap<String, String>,
+        numeric_properties: HashMap<String, f64>,
+    ) -> MatchmakerTicket {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.matchmaker_add = Some(MatchmakerAdd {
             query: query.to_owned(),
@@ -260,7 +453,15 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         envelope.matchmaker_ticket.unwrap()
     }
 
-    async fn add_matchmaker_party(&self, party_id: &str, query: &str, min_count: i32, max_count: i32, string_properties: HashMap<String, String>, numeric_properties: HashMap<String, f64>) -> PartyMatchmakerTicket{
+    async fn add_matchmaker_party(
+        &self,
+        party_id: &str,
+        query: &str,
+        min_count: i32,
+        max_count: i32,
+        string_properties: HashMap<String, String>,
+        numeric_properties: HashMap<String, f64>,
+    ) -> PartyMatchmakerTicket {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_matchmaker_add = Some(PartyMatchmakerAdd {
             query: query.to_owned(),
@@ -282,7 +483,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     async fn close_party(&self, party_id: &str) {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_close = Some(PartyClose {
-            party_id: party_id.to_owned()
+            party_id: party_id.to_owned(),
         });
 
         let json = envelope.serialize_json();
@@ -304,8 +505,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
         let (tx, rx) = oneshot::channel();
 
-        self.shared_state.lock().unwrap()
-            .connected.push(tx);
+        self.shared_state.lock().unwrap().connected.push(tx);
 
         self.adapter
             .lock()
@@ -329,10 +529,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
 
     async fn create_party(&self, open: bool, max_size: i32) -> Party {
         let (mut envelope, cid) = self.make_envelope_with_cid();
-        envelope.party_create = Some(PartyCreate {
-            max_size,
-            open,
-        });
+        envelope.party_create = Some(PartyCreate { max_size, open });
 
         let json = envelope.serialize_json();
         self.send(&json, false);
@@ -450,7 +647,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
     async fn list_party_join_requests(&self, party_id: &str) -> PartyJoinRequest {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.party_join_request_list = Some(PartyJoinRequestList {
-            party_id: party_id.to_owned()
+            party_id: party_id.to_owned(),
         });
 
         let json = envelope.serialize_json();
@@ -548,7 +745,13 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         result_envelope.rpc.unwrap()
     }
 
-    async fn send_match_state(&self, match_id: &str, op_code: i64, state: &[u8], presences: &[UserPresence]) {
+    async fn send_match_state(
+        &self,
+        match_id: &str,
+        op_code: i64,
+        state: &[u8],
+        presences: &[UserPresence],
+    ) {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.match_data_send = Some(MatchDataSend {
             match_id: match_id.to_owned(),
@@ -585,7 +788,12 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         self.send(&json, false);
     }
 
-    async fn update_chat_message(&self, channel_id: &str, message_id: &str, content: &str) -> ChannelMessageAck {
+    async fn update_chat_message(
+        &self,
+        channel_id: &str,
+        message_id: &str,
+        content: &str,
+    ) -> ChannelMessageAck {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.channel_message_update = Some(ChannelMesageUpdate {
             channel_id: channel_id.to_owned(),

@@ -1,12 +1,11 @@
-use crate::api::{ApiChannelMessage, ApiNotification, ApiRpc, ApiNotificationList, ApiUser};
+use crate::api::{ApiChannelMessage, ApiNotification, ApiNotificationList, ApiRpc, ApiUser};
 use crate::session::Session;
 use async_trait::async_trait;
-use nanoserde::{DeJson, SerJson, DeJsonErr};
+use nanoserde::{DeJson, DeJsonErr, SerJson};
 use std::collections::HashMap;
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Timestamp(String);
-
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Channel {
@@ -39,7 +38,7 @@ pub struct ChannelJoin {
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct ChannelLeave {
-    pub channel_id: String
+    pub channel_id: String,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
@@ -68,7 +67,7 @@ pub struct ChannelMessageSend {
 pub struct ChannelMesageUpdate {
     pub channel_id: String,
     pub message_id: String,
-    pub content: String
+    pub content: String,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
@@ -119,8 +118,7 @@ pub struct Match {
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
-pub struct MatchCreate {
-}
+pub struct MatchCreate {}
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct MatchData {
@@ -156,7 +154,7 @@ pub struct MatchLeave {
 pub struct MatchPresenceEvent {
     pub match_id: String,
     pub joins: Vec<UserPresence>,
-    pub leaves: Vec<UserPresence>
+    pub leaves: Vec<UserPresence>,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
@@ -220,12 +218,12 @@ pub struct PartyCreate {
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct PartyJoin {
-    pub party_id: String
+    pub party_id: String,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct PartyLeave {
-    pub party_id: String
+    pub party_id: String,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
@@ -313,16 +311,14 @@ pub struct PartyPresenceEvent {
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
-pub struct Ping {
-}
+pub struct Ping {}
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
-pub struct Pong {
-}
+pub struct Pong {}
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
 pub struct Status {
-    pub presences: Vec<UserPresence>
+    pub presences: Vec<UserPresence>,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
@@ -360,7 +356,7 @@ pub struct StreamData {
     pub stream: Stream,
     pub sender: UserPresence,
     pub data: String,
-    pub reliable: bool
+    pub reliable: bool,
 }
 
 #[derive(DeJson, SerJson, Debug, Clone, Default)]
@@ -390,6 +386,7 @@ pub struct WebSocketMessageEnvelope {
     pub channel_message_remove: Option<ChannelMesageRemove>,
     pub channel_message_send: Option<ChannelMessageSend>,
     pub channel_message_update: Option<ChannelMesageUpdate>,
+    pub channel_presence_event: Option<ChannelPresenceEvent>,
     pub error: Option<Error>,
     pub matchmaker_add: Option<MatchmakerAdd>,
     pub matchmaker_matched: Option<MatchmakerMatched>,
@@ -440,74 +437,88 @@ pub trait Socket {
 
     fn on_connected<T>(&mut self, callback: T)
     where
-        T: Fn() + 'static;
+        T: Fn() + Send + Send + 'static;
 
     fn on_received_channel_message<T>(&mut self, callback: T)
     where
-        T: Fn(ApiChannelMessage) + 'static;
+        T: Fn(ApiChannelMessage) + Send + Send + 'static;
 
     fn on_received_channel_presence<T>(&mut self, callback: T)
-        where
-            T: Fn(ChannelPresenceEvent) + 'static;
+    where
+        T: Fn(ChannelPresenceEvent) + Send + Send + 'static;
 
     fn on_received_error<T>(&mut self, callback: T)
-        where
-            T: Fn(Error) + 'static;
+    where
+        T: Fn(Error) + Send + Send + 'static;
 
     fn on_received_matchmaker_matched<T>(&mut self, callback: T)
-        where
-            T: Fn(MatchmakerMatched) + 'static;
+    where
+        T: Fn(MatchmakerMatched) + Send + Send + 'static;
 
     fn on_received_match_state<T>(&mut self, callback: T)
-        where
-            T: Fn(MatchData) + 'static;
+    where
+        T: Fn(MatchData) + Send + Send + 'static;
 
     fn on_received_match_presence<T>(&mut self, callback: T)
-        where
-            T: Fn(MatchPresenceEvent) + 'static;
+    where
+        T: Fn(MatchPresenceEvent) + Send + 'static;
 
     fn on_received_notification<T>(&mut self, callback: T)
-        where
-            T: Fn(ApiNotification) + 'static;
+    where
+        T: Fn(ApiNotification) + Send + 'static;
 
     fn on_received_party_close<T>(&mut self, callback: T)
-        where
-            T: Fn(PartyClose) + 'static;
+    where
+        T: Fn(PartyClose) + Send + 'static;
 
     fn on_received_party_data<T>(&mut self, callback: T)
-        where
-            T: Fn(PartyData) + 'static;
+    where
+        T: Fn(PartyData) + Send + 'static;
 
     fn on_received_party_join_request<T>(&mut self, callback: T)
-        where
-            T: Fn(PartyJoinRequest) + 'static;
+    where
+        T: Fn(PartyJoinRequest) + Send + 'static;
 
     fn on_received_party_leader<T>(&mut self, callback: T)
-        where
-            T: Fn(PartyLeader) + 'static;
+    where
+        T: Fn(PartyLeader) + Send + 'static;
 
     fn on_received_party_presence<T>(&mut self, callback: T)
-        where
-            T: Fn(PartyPresenceEvent) + 'static;
+    where
+        T: Fn(PartyPresenceEvent) + Send + 'static;
 
     fn on_received_status_presence<T>(&mut self, callback: T)
-        where
-            T: Fn(StatusPresenceEvent) + 'static;
+    where
+        T: Fn(StatusPresenceEvent) + Send + 'static;
 
     fn on_received_stream_presence<T>(&mut self, callback: T)
-        where
-            T: Fn(StreamPresenceEvent) + 'static;
+    where
+        T: Fn(StreamPresenceEvent) + Send + 'static;
 
     fn on_received_stream_state<T>(&mut self, callback: T)
-        where
-            T: Fn(StreamData) + 'static;
+    where
+        T: Fn(StreamData) + Send + 'static;
 
     async fn accept_party_member(&self, party_id: &str, user_presence: &UserPresence);
 
-    async fn add_matchmaker(&self, query: &str, min_count: Option<i32>, max_count: Option<i32>,
-    string_properties: HashMap<String, String>, numeric_properties: HashMap<String, f64>) -> MatchmakerTicket;
+    async fn add_matchmaker(
+        &self,
+        query: &str,
+        min_count: Option<i32>,
+        max_count: Option<i32>,
+        string_properties: HashMap<String, String>,
+        numeric_properties: HashMap<String, f64>,
+    ) -> MatchmakerTicket;
 
-    async fn add_matchmaker_party(&self, party_id: &str, query: &str, min_count: i32, max_count: i32, string_properties: HashMap<String, String>, numeric_properties: HashMap<String, f64>) -> PartyMatchmakerTicket;
+    async fn add_matchmaker_party(
+        &self,
+        party_id: &str,
+        query: &str,
+        min_count: i32,
+        max_count: i32,
+        string_properties: HashMap<String, String>,
+        numeric_properties: HashMap<String, f64>,
+    ) -> PartyMatchmakerTicket;
 
     async fn close_party(&self, party_id: &str);
 
@@ -557,13 +568,24 @@ pub trait Socket {
 
     async fn rpc_bytes(&self, func_id: &str, payload: &[u8]) -> ApiRpc;
 
-    async fn send_match_state(&self, match_id: &str, op_code: i64, state: &[u8], presences: &[UserPresence]);
+    async fn send_match_state(
+        &self,
+        match_id: &str,
+        op_code: i64,
+        state: &[u8],
+        presences: &[UserPresence],
+    );
 
     async fn send_party_data(&self, party_id: &str, op_code: i64, data: &[u8]);
 
     async fn unfollow_users(&self, user_ids: &[&str]);
 
-    async fn update_chat_message(&self, channel_id: &str, message_id: &str, content: &str) -> ChannelMessageAck;
+    async fn update_chat_message(
+        &self,
+        channel_id: &str,
+        message_id: &str,
+        content: &str,
+    ) -> ChannelMessageAck;
 
     async fn update_status(&self, status: &str);
 
