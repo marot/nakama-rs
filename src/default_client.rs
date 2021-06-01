@@ -985,7 +985,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         id: &str,
         payload: Option<&str>,
     ) -> Result<ApiRpc, Self::Error> {
-        let request = api::rpc_func_2(&session.auth_token, id, payload, None);
+        let request = api::rpc_func2(&session.auth_token, id, payload, None);
 
         self.send(request).await
     }
@@ -1252,7 +1252,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 metadata: metadata.unwrap_or("").to_owned(),
                 score: score.to_string(),
                 subscore: sub_score.map_or("".to_owned(), |sub_score| sub_score.to_string()),
-                operator: ApiOverrideOperator {},
+                operator: ApiOverrideOperator::NO_OVERRIDE,
             },
         );
 
@@ -1289,7 +1289,7 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
                 metadata: metadata.unwrap_or("").to_owned(),
                 score: score.to_string(),
                 subscore: sub_score.map_or("".to_owned(), |sub_score| sub_score.to_string()),
-                operator: ApiOverrideOperator {},
+                operator: ApiOverrideOperator::NO_OVERRIDE,
             },
         );
 

@@ -80,32 +80,42 @@ impl ToRestString for UserGroupListUserGroup {
 }
 
 /// - UNKNOWN: Unknown environment.  - SANDBOX: Sandbox/test environment.  - PRODUCTION: Production environment.
-#[derive(Debug, DeJson, SerJson, Default, Clone)]
-#[nserde(default)]
-pub struct ValidatedPurchaseEnvironment {}
+#[derive(Debug, Clone, Copy)]
+#[repr(i32)]
+pub enum ValidatedPurchaseEnvironment {
+    /// - UNKNOWN: Unknown environment.
+    UNKNOWN = 0,
+    ///  - SANDBOX: Sandbox/test environment.
+    SANDBOX = 1,
+    ///  - PRODUCTION: Production environment.
+    PRODUCTION = 2,
+}
 
 impl ToRestString for ValidatedPurchaseEnvironment {
     fn to_string(&self) -> String {
         let mut output = String::new();
-
-        output.push_str("{");
-        output.push_str("}");
-        return output;
+        output.push_str(&format!("{}", *self as i32));
+        output
     }
 }
 
 /// - APPLE_APP_STORE: Apple App Store  - GOOGLE_PLAY_STORE: Google Play Store  - HUAWEI_APP_GALLERY: Huawei App Gallery
-#[derive(Debug, DeJson, SerJson, Default, Clone)]
-#[nserde(default)]
-pub struct ValidatedPurchaseStore {}
+#[derive(Debug, Clone, Copy)]
+#[repr(i32)]
+pub enum ValidatedPurchaseStore {
+    /// - APPLE_APP_STORE: Apple App Store
+    APPLE_APP_STORE = 0,
+    ///  - GOOGLE_PLAY_STORE: Google Play Store
+    GOOGLE_PLAY_STORE = 1,
+    ///  - HUAWEI_APP_GALLERY: Huawei App Gallery
+    HUAWEI_APP_GALLERY = 2,
+}
 
 impl ToRestString for ValidatedPurchaseStore {
     fn to_string(&self) -> String {
         let mut output = String::new();
-
-        output.push_str("{");
-        output.push_str("}");
-        return output;
+        output.push_str(&format!("{}", *self as i32));
+        output
     }
 }
 
@@ -1218,17 +1228,26 @@ impl ToRestString for ApiNotificationList {
 }
 
 /// Operator that can be used to override the one set in the leaderboard.   - NO_OVERRIDE: Do not override the leaderboard operator.  - BEST: Override the leaderboard operator with BEST.  - SET: Override the leaderboard operator with SET.  - INCREMENT: Override the leaderboard operator with INCREMENT.  - DECREMENT: Override the leaderboard operator with DECREMENT.
-#[derive(Debug, DeJson, SerJson, Default, Clone)]
-#[nserde(default)]
-pub struct ApiOverrideOperator {}
+#[derive(Debug, Clone, Copy)]
+#[repr(i32)]
+pub enum ApiOverrideOperator {
+    /// Operator that can be used to override the one set in the leaderboard.
+    NO_OVERRIDE = 0,
+    ///
+    BEST = 1,
+    ///  - NO_OVERRIDE: Do not override the leaderboard operator.
+    SET = 2,
+    ///  - BEST: Override the leaderboard operator with BEST.
+    INCREMENT = 3,
+    ///  - SET: Override the leaderboard operator with SET.
+    DECREMENT = 4,
+}
 
 impl ToRestString for ApiOverrideOperator {
     fn to_string(&self) -> String {
         let mut output = String::new();
-
-        output.push_str("{");
-        output.push_str("}");
-        return output;
+        output.push_str(&format!("{}", *self as i32));
+        output
     }
 }
 
@@ -4060,7 +4079,7 @@ pub fn list_notifications(
     }
 }
 /// Execute a Lua function on the server.
-pub fn rpc_func_2(
+pub fn rpc_func2(
     bearer_token: &str,
     id: &str,
     payload: Option<&str>,
@@ -4276,7 +4295,7 @@ pub fn list_storage_objects(
     }
 }
 /// List publicly readable storage objects in a given collection.
-pub fn list_storage_objects_2(
+pub fn list_storage_objects2(
     bearer_token: &str,
     collection: &str,
     user_id: &str,
@@ -4411,7 +4430,7 @@ pub fn list_tournament_records(
     }
 }
 /// Write a record to a tournament.
-pub fn write_tournament_record_2(
+pub fn write_tournament_record2(
     bearer_token: &str,
     tournament_id: &str,
     body: WriteTournamentRecordRequestTournamentRecordWrite,

@@ -34,6 +34,7 @@ mod api_gen;
 
 pub mod config;
 
+mod api_gen_enum;
 pub mod client;
 pub mod default_client;
 pub mod error;
