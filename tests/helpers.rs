@@ -6,7 +6,7 @@ use nakama_rs::helper::tick_socket;
 use nakama_rs::socket::{ChannelJoinType, Socket};
 use nakama_rs::web_socket::WebSocket;
 
-use nakama_rs::api::ApiAccount;
+use nakama_rs::api::{ApiAccount, ApiGroup};
 use nakama_rs::session::Session;
 use nakama_rs::web_socket_adapter::WebSocketAdapter;
 use simple_logger::SimpleLogger;
@@ -16,6 +16,20 @@ use std::sync::mpsc;
 use std::thread::sleep;
 use std::time::Duration;
 use nakama_rs::http_adapter::RestHttpAdapter;
+
+pub async fn remove_group_if_exists<C: Client>(client: &C, mut session: &mut Session, group_name: &str) {
+    let groups = client.list_groups(&mut session, Some(group_name), None, None).await;
+    if let Ok(groups) = groups {
+        if (groups.groups.len() > 0) {
+        client.delete_group(&mut session, &groups.groups[0].id).await.unwrap();
+        }
+    }
+}
+
+pub async fn re_create_group<C: Client>(client: &C, mut session: &mut Session, group_name: &str) -> ApiGroup {
+    remove_group_if_exists(client, &mut session, group_name).await;
+    client.create_group(&mut session, group_name, None, None, None, Some(true), None).await.unwrap()
+}
 
 pub async fn clients_with_users(
     id_one: &str,
