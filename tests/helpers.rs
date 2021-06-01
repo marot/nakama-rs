@@ -15,6 +15,29 @@ use std::collections::HashMap;
 use std::sync::mpsc;
 use std::thread::sleep;
 use std::time::Duration;
+use nakama_rs::http_adapter::RestHttpAdapter;
+
+pub async fn clients_with_users(
+    id_one: &str,
+    id_two: &str,
+    id_three: &str,
+) -> (DefaultClient<RestHttpAdapter>, Session, Session, Session) {
+    let client = DefaultClient::new_with_adapter();
+    let session = client
+        .authenticate_device(id_one, Some(id_one.clone()), true, HashMap::new())
+        .await
+        .unwrap();
+    let session2 = client
+        .authenticate_device(id_two, Some(id_two.clone()), true, HashMap::new())
+        .await
+        .unwrap();
+    let session3 = client
+        .authenticate_device(id_three, Some(id_three.clone()), true, HashMap::new())
+        .await
+        .unwrap();
+
+    return (client, session, session2, session3)
+}
 
 pub async fn sockets_with_users(
     id_one: &str,

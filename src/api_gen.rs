@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 
 use nanoserde::{DeJson, SerJson};
+use urlencoding::encode;
 
 #[derive(Debug, Clone)]
 pub enum Authentication {
@@ -33,7 +34,7 @@ trait ToRestString {
 }
 
 /// A single user-role pair.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct GroupUserListGroupUser {
     pub state: i32,
@@ -56,7 +57,7 @@ impl ToRestString for GroupUserListGroupUser {
 }
 
 /// A single group-role pair.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct UserGroupListUserGroup {
     pub group: ApiGroup,
@@ -79,7 +80,7 @@ impl ToRestString for UserGroupListUserGroup {
 }
 
 /// - UNKNOWN: Unknown environment.  - SANDBOX: Sandbox/test environment.  - PRODUCTION: Production environment.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ValidatedPurchaseEnvironment {}
 
@@ -94,7 +95,7 @@ impl ToRestString for ValidatedPurchaseEnvironment {
 }
 
 /// - APPLE_APP_STORE: Apple App Store  - GOOGLE_PLAY_STORE: Google Play Store  - HUAWEI_APP_GALLERY: Huawei App Gallery
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ValidatedPurchaseStore {}
 
@@ -109,7 +110,7 @@ impl ToRestString for ValidatedPurchaseStore {
 }
 
 /// Record values to write.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct WriteLeaderboardRecordRequestLeaderboardRecordWrite {
     pub metadata: String,
@@ -140,7 +141,7 @@ impl ToRestString for WriteLeaderboardRecordRequestLeaderboardRecordWrite {
 }
 
 /// Record values to write.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct WriteTournamentRecordRequestTournamentRecordWrite {
     pub metadata: String,
@@ -171,7 +172,7 @@ impl ToRestString for WriteTournamentRecordRequestTournamentRecordWrite {
 }
 
 /// A user with additional account details. Always the current user.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccount {
     pub custom_id: String,
@@ -221,7 +222,7 @@ impl ToRestString for ApiAccount {
 }
 
 /// Send a Apple Sign In token to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountApple {
     pub token: String,
@@ -251,7 +252,7 @@ impl ToRestString for ApiAccountApple {
 }
 
 /// Send a custom ID to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountCustom {
     pub id: String,
@@ -281,7 +282,7 @@ impl ToRestString for ApiAccountCustom {
 }
 
 /// Send a device to the server. Used with authenticate/link/unlink and user.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountDevice {
     pub id: String,
@@ -311,7 +312,7 @@ impl ToRestString for ApiAccountDevice {
 }
 
 /// Send an email with password to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountEmail {
     pub email: String,
@@ -345,7 +346,7 @@ impl ToRestString for ApiAccountEmail {
 }
 
 /// Send a Facebook token to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountFacebook {
     pub token: String,
@@ -375,7 +376,7 @@ impl ToRestString for ApiAccountFacebook {
 }
 
 /// Send a Facebook Instant Game token to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountFacebookInstantGame {
     pub signed_player_info: String,
@@ -408,7 +409,7 @@ impl ToRestString for ApiAccountFacebookInstantGame {
 }
 
 /// Send Apple's Game Center account credentials to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountGameCenter {
     pub bundle_id: String,
@@ -461,7 +462,7 @@ impl ToRestString for ApiAccountGameCenter {
 }
 
 /// Send a Google token to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountGoogle {
     pub token: String,
@@ -491,7 +492,7 @@ impl ToRestString for ApiAccountGoogle {
 }
 
 /// Send a Steam token to the server. Used with authenticate/link/unlink.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountSteam {
     pub token: String,
@@ -588,7 +589,7 @@ impl ToRestString for ApiChannelMessage {
 }
 
 /// A list of channel messages, usually a result of a list operation.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiChannelMessageList {
     pub cacheable_cursor: String,
@@ -629,7 +630,7 @@ impl ToRestString for ApiChannelMessageList {
 }
 
 /// Create a group with the current user as owner.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiCreateGroupRequest {
     pub avatar_url: String,
@@ -668,7 +669,7 @@ impl ToRestString for ApiCreateGroupRequest {
 }
 
 /// Storage objects to delete.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiDeleteStorageObjectId {
     pub collection: String,
@@ -695,7 +696,7 @@ impl ToRestString for ApiDeleteStorageObjectId {
 }
 
 /// Batch delete storage objects.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiDeleteStorageObjectsRequest {
     pub object_ids: Vec<ApiDeleteStorageObjectId>,
@@ -721,7 +722,7 @@ impl ToRestString for ApiDeleteStorageObjectsRequest {
 }
 
 /// Represents an event to be passed through the server to registered event handlers.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiEvent {
     pub external: bool,
@@ -759,7 +760,7 @@ impl ToRestString for ApiEvent {
 }
 
 /// A friend of a user.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiFriend {
     pub state: i32,
@@ -786,7 +787,7 @@ impl ToRestString for ApiFriend {
 }
 
 /// A collection of zero or more friends of the user.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiFriendList {
     pub cursor: String,
@@ -816,7 +817,7 @@ impl ToRestString for ApiFriendList {
 }
 
 /// A group in the server.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiGroup {
     pub avatar_url: String,
@@ -879,7 +880,7 @@ impl ToRestString for ApiGroup {
 }
 
 /// One or more groups returned from a listing operation.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiGroupList {
     pub cursor: String,
@@ -909,7 +910,7 @@ impl ToRestString for ApiGroupList {
 }
 
 /// A list of users belonging to a group, along with their role.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiGroupUserList {
     pub cursor: String,
@@ -939,7 +940,7 @@ impl ToRestString for ApiGroupUserList {
 }
 
 /// Represents a complete leaderboard record with all scores and associated metadata.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiLeaderboardRecord {
     pub create_time: String,
@@ -1005,7 +1006,7 @@ impl ToRestString for ApiLeaderboardRecord {
 }
 
 /// A set of leaderboard records, may be part of a leaderboard records page or a batch of individual records.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiLeaderboardRecordList {
     pub next_cursor: String,
@@ -1050,7 +1051,7 @@ impl ToRestString for ApiLeaderboardRecordList {
 }
 
 /// Link Steam to the current user's account.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiLinkSteamRequest {
     pub account: ApiAccountSteam,
@@ -1073,7 +1074,7 @@ impl ToRestString for ApiLinkSteamRequest {
 }
 
 /// Represents a realtime match.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiMatch {
     pub authoritative: bool,
@@ -1115,7 +1116,7 @@ impl ToRestString for ApiMatch {
 }
 
 /// A list of realtime matches.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiMatchList {
     pub matches: Vec<ApiMatch>,
@@ -1217,7 +1218,7 @@ impl ToRestString for ApiNotificationList {
 }
 
 /// Operator that can be used to override the one set in the leaderboard.   - NO_OVERRIDE: Do not override the leaderboard operator.  - BEST: Override the leaderboard operator with BEST.  - SET: Override the leaderboard operator with SET.  - INCREMENT: Override the leaderboard operator with INCREMENT.  - DECREMENT: Override the leaderboard operator with DECREMENT.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiOverrideOperator {}
 
@@ -1232,7 +1233,7 @@ impl ToRestString for ApiOverrideOperator {
 }
 
 /// Storage objects to get.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiReadStorageObjectId {
     pub collection: String,
@@ -1259,7 +1260,7 @@ impl ToRestString for ApiReadStorageObjectId {
 }
 
 /// Batch get storage objects.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiReadStorageObjectsRequest {
     pub object_ids: Vec<ApiReadStorageObjectId>,
@@ -1312,7 +1313,7 @@ impl ToRestString for ApiRpc {
 }
 
 /// A user's session used to authenticate messages.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiSession {
     pub created: bool,
@@ -1339,7 +1340,7 @@ impl ToRestString for ApiSession {
 }
 
 /// Log out a session, invalidate a refresh token, or log out all sessions/refresh tokens for a user.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiSessionLogoutRequest {
     pub refresh_token: String,
@@ -1362,7 +1363,7 @@ impl ToRestString for ApiSessionLogoutRequest {
 }
 
 /// Authenticate against the server with a refresh token.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiSessionRefreshRequest {
     pub token: String,
@@ -1392,7 +1393,7 @@ impl ToRestString for ApiSessionRefreshRequest {
 }
 
 /// An object within the storage engine.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObject {
     pub collection: String,
@@ -1449,7 +1450,7 @@ impl ToRestString for ApiStorageObject {
 }
 
 /// A storage acknowledgement.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObjectAck {
     pub collection: String,
@@ -1480,7 +1481,7 @@ impl ToRestString for ApiStorageObjectAck {
 }
 
 /// Batch of acknowledgements for the storage object write.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObjectAcks {
     pub acks: Vec<ApiStorageObjectAck>,
@@ -1502,7 +1503,7 @@ impl ToRestString for ApiStorageObjectAcks {
 }
 
 /// List of storage objects.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObjectList {
     pub cursor: String,
@@ -1532,7 +1533,7 @@ impl ToRestString for ApiStorageObjectList {
 }
 
 /// Batch of storage objects.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObjects {
     pub objects: Vec<ApiStorageObject>,
@@ -1558,7 +1559,7 @@ impl ToRestString for ApiStorageObjects {
 }
 
 /// A tournament on the server.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiTournament {
     pub can_enter: bool,
@@ -1647,7 +1648,7 @@ impl ToRestString for ApiTournament {
 }
 
 /// A list of tournaments.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiTournamentList {
     pub cursor: String,
@@ -1677,7 +1678,7 @@ impl ToRestString for ApiTournamentList {
 }
 
 /// A set of tournament records which may be part of a tournament records page or a batch of individual records.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiTournamentRecordList {
     pub next_cursor: String,
@@ -1722,7 +1723,7 @@ impl ToRestString for ApiTournamentRecordList {
 }
 
 /// Update a user's account details.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUpdateAccountRequest {
     pub avatar_url: String,
@@ -1761,7 +1762,7 @@ impl ToRestString for ApiUpdateAccountRequest {
 }
 
 /// Update fields in a given group.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUpdateGroupRequest {
     pub avatar_url: String,
@@ -1800,7 +1801,7 @@ impl ToRestString for ApiUpdateGroupRequest {
 }
 
 /// A user in the server.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUser {
     pub apple_id: String,
@@ -1890,7 +1891,7 @@ impl ToRestString for ApiUser {
 }
 
 /// A list of groups belonging to a user, along with the user's role in each group.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUserGroupList {
     pub cursor: String,
@@ -1920,7 +1921,7 @@ impl ToRestString for ApiUserGroupList {
 }
 
 /// A collection of zero or more users.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUsers {
     pub users: Vec<ApiUser>,
@@ -1942,7 +1943,7 @@ impl ToRestString for ApiUsers {
 }
 
 ///
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatePurchaseAppleRequest {
     pub receipt: String,
@@ -1961,7 +1962,7 @@ impl ToRestString for ApiValidatePurchaseAppleRequest {
 }
 
 ///
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatePurchaseGoogleRequest {
     pub purchase: String,
@@ -1980,7 +1981,7 @@ impl ToRestString for ApiValidatePurchaseGoogleRequest {
 }
 
 ///
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatePurchaseHuaweiRequest {
     pub purchase: String,
@@ -2003,7 +2004,7 @@ impl ToRestString for ApiValidatePurchaseHuaweiRequest {
 }
 
 ///
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatePurchaseResponse {
     pub validated_purchases: Vec<ApiValidatedPurchase>,
@@ -2029,7 +2030,7 @@ impl ToRestString for ApiValidatePurchaseResponse {
 }
 
 /// Validated Purchase stored by Nakama.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatedPurchase {
     pub create_time: String,
@@ -2082,7 +2083,7 @@ impl ToRestString for ApiValidatedPurchase {
 }
 
 /// The object to store.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiWriteStorageObject {
     pub collection: String,
@@ -2127,7 +2128,7 @@ impl ToRestString for ApiWriteStorageObject {
 }
 
 /// Write objects to the storage engine.
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiWriteStorageObjectsRequest {
     pub objects: Vec<ApiWriteStorageObject>,
@@ -2153,7 +2154,7 @@ impl ToRestString for ApiWriteStorageObjectsRequest {
 }
 
 ///
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ProtobufAny {
     pub type_url: String,
@@ -2176,7 +2177,7 @@ impl ToRestString for ProtobufAny {
 }
 
 ///
-#[derive(Debug, DeJson, Default, Clone)]
+#[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct RpcStatus {
     pub code: i32,
@@ -2299,7 +2300,7 @@ pub fn authenticate_apple(
         query_params.push_str(&format!("create={:?}&", param));
     }
     if let Some(param) = username {
-        query_params.push_str(&format!("username={}&", param));
+        query_params.push_str(&format!("username={}&", encode(param)));
     }
 
     let authentication = Authentication::Basic {
@@ -2336,7 +2337,7 @@ pub fn authenticate_custom(
         query_params.push_str(&format!("create={:?}&", param));
     }
     if let Some(param) = username {
-        query_params.push_str(&format!("username={}&", param));
+        query_params.push_str(&format!("username={}&", encode(param)));
     }
 
     let authentication = Authentication::Basic {
@@ -2373,7 +2374,7 @@ pub fn authenticate_device(
         query_params.push_str(&format!("create={:?}&", param));
     }
     if let Some(param) = username {
-        query_params.push_str(&format!("username={}&", param));
+        query_params.push_str(&format!("username={}&", encode(param)));
     }
 
     let authentication = Authentication::Basic {
@@ -2410,7 +2411,7 @@ pub fn authenticate_email(
         query_params.push_str(&format!("create={:?}&", param));
     }
     if let Some(param) = username {
-        query_params.push_str(&format!("username={}&", param));
+        query_params.push_str(&format!("username={}&", encode(param)));
     }
 
     let authentication = Authentication::Basic {
@@ -2448,7 +2449,7 @@ pub fn authenticate_facebook(
         query_params.push_str(&format!("create={:?}&", param));
     }
     if let Some(param) = username {
-        query_params.push_str(&format!("username={}&", param));
+        query_params.push_str(&format!("username={}&", encode(param)));
     }
     if let Some(param) = sync {
         query_params.push_str(&format!("sync={:?}&", param));
@@ -2488,7 +2489,7 @@ pub fn authenticate_facebook_instant_game(
         query_params.push_str(&format!("create={:?}&", param));
     }
     if let Some(param) = username {
-        query_params.push_str(&format!("username={}&", param));
+        query_params.push_str(&format!("username={}&", encode(param)));
     }
 
     let authentication = Authentication::Basic {
@@ -2525,7 +2526,7 @@ pub fn authenticate_game_center(
         query_params.push_str(&format!("create={:?}&", param));
     }
     if let Some(param) = username {
-        query_params.push_str(&format!("username={}&", param));
+        query_params.push_str(&format!("username={}&", encode(param)));
     }
 
     let authentication = Authentication::Basic {
@@ -2562,7 +2563,7 @@ pub fn authenticate_google(
         query_params.push_str(&format!("create={:?}&", param));
     }
     if let Some(param) = username {
-        query_params.push_str(&format!("username={}&", param));
+        query_params.push_str(&format!("username={}&", encode(param)));
     }
 
     let authentication = Authentication::Basic {
@@ -2600,7 +2601,7 @@ pub fn authenticate_steam(
         query_params.push_str(&format!("create={:?}&", param));
     }
     if let Some(param) = username {
-        query_params.push_str(&format!("username={}&", param));
+        query_params.push_str(&format!("username={}&", encode(param)));
     }
     if let Some(param) = sync {
         query_params.push_str(&format!("sync={:?}&", param));
@@ -3118,7 +3119,7 @@ pub fn list_channel_messages(
         query_params.push_str(&format!("forward={:?}&", param));
     }
     if let Some(param) = cursor {
-        query_params.push_str(&format!("cursor={}&", param));
+        query_params.push_str(&format!("cursor={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3170,10 +3171,10 @@ pub fn delete_friends(bearer_token: &str, ids: &[String], usernames: &[String]) 
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in ids {
-        query_params.push_str(&format!("ids={:?}&", elem));
+        query_params.push_str(&format!("ids={}&", encode(elem)));
     }
     for elem in usernames {
-        query_params.push_str(&format!("usernames={:?}&", elem));
+        query_params.push_str(&format!("usernames={}&", encode(elem)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3212,7 +3213,7 @@ pub fn list_friends(
         query_params.push_str(&format!("state={}&", param));
     }
     if let Some(param) = cursor {
-        query_params.push_str(&format!("cursor={}&", param));
+        query_params.push_str(&format!("cursor={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3240,10 +3241,10 @@ pub fn add_friends(bearer_token: &str, ids: &[String], usernames: &[String]) -> 
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in ids {
-        query_params.push_str(&format!("ids={:?}&", elem));
+        query_params.push_str(&format!("ids={}&", encode(elem)));
     }
     for elem in usernames {
-        query_params.push_str(&format!("usernames={:?}&", elem));
+        query_params.push_str(&format!("usernames={}&", encode(elem)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3271,10 +3272,10 @@ pub fn block_friends(bearer_token: &str, ids: &[String], usernames: &[String]) -
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in ids {
-        query_params.push_str(&format!("ids={:?}&", elem));
+        query_params.push_str(&format!("ids={}&", encode(elem)));
     }
     for elem in usernames {
-        query_params.push_str(&format!("usernames={:?}&", elem));
+        query_params.push_str(&format!("usernames={}&", encode(elem)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3369,10 +3370,10 @@ pub fn list_groups(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     if let Some(param) = name {
-        query_params.push_str(&format!("name={}&", param));
+        query_params.push_str(&format!("name={}&", encode(param)));
     }
     if let Some(param) = cursor {
-        query_params.push_str(&format!("cursor={}&", param));
+        query_params.push_str(&format!("cursor={}&", encode(param)));
     }
     if let Some(param) = limit {
         query_params.push_str(&format!("limit={}&", param));
@@ -3483,7 +3484,7 @@ pub fn add_group_users(bearer_token: &str, group_id: &str, user_ids: &[String]) 
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in user_ids {
-        query_params.push_str(&format!("user_ids={:?}&", elem));
+        query_params.push_str(&format!("user_ids={}&", encode(elem)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3512,7 +3513,7 @@ pub fn ban_group_users(bearer_token: &str, group_id: &str, user_ids: &[String]) 
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in user_ids {
-        query_params.push_str(&format!("user_ids={:?}&", elem));
+        query_params.push_str(&format!("user_ids={}&", encode(elem)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3545,7 +3546,7 @@ pub fn demote_group_users(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in user_ids {
-        query_params.push_str(&format!("user_ids={:?}&", elem));
+        query_params.push_str(&format!("user_ids={}&", encode(elem)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3604,7 +3605,7 @@ pub fn kick_group_users(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in user_ids {
-        query_params.push_str(&format!("user_ids={:?}&", elem));
+        query_params.push_str(&format!("user_ids={}&", encode(elem)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3663,7 +3664,7 @@ pub fn promote_group_users(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in user_ids {
-        query_params.push_str(&format!("user_ids={:?}&", elem));
+        query_params.push_str(&format!("user_ids={}&", encode(elem)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3704,7 +3705,7 @@ pub fn list_group_users(
         query_params.push_str(&format!("state={}&", param));
     }
     if let Some(param) = cursor {
-        query_params.push_str(&format!("cursor={}&", param));
+        query_params.push_str(&format!("cursor={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3847,16 +3848,16 @@ pub fn list_leaderboard_records(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in owner_ids {
-        query_params.push_str(&format!("owner_ids={:?}&", elem));
+        query_params.push_str(&format!("owner_ids={}&", encode(elem)));
     }
     if let Some(param) = limit {
         query_params.push_str(&format!("limit={}&", param));
     }
     if let Some(param) = cursor {
-        query_params.push_str(&format!("cursor={}&", param));
+        query_params.push_str(&format!("cursor={}&", encode(param)));
     }
     if let Some(param) = expiry {
-        query_params.push_str(&format!("expiry={}&", param));
+        query_params.push_str(&format!("expiry={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3924,7 +3925,7 @@ pub fn list_leaderboard_records_around_owner(
         query_params.push_str(&format!("limit={}&", param));
     }
     if let Some(param) = expiry {
-        query_params.push_str(&format!("expiry={}&", param));
+        query_params.push_str(&format!("expiry={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -3966,7 +3967,7 @@ pub fn list_matches(
         query_params.push_str(&format!("authoritative={:?}&", param));
     }
     if let Some(param) = label {
-        query_params.push_str(&format!("label={}&", param));
+        query_params.push_str(&format!("label={}&", encode(param)));
     }
     if let Some(param) = min_size {
         query_params.push_str(&format!("min_size={}&", param));
@@ -3975,7 +3976,7 @@ pub fn list_matches(
         query_params.push_str(&format!("max_size={}&", param));
     }
     if let Some(param) = query {
-        query_params.push_str(&format!("query={}&", param));
+        query_params.push_str(&format!("query={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4003,7 +4004,7 @@ pub fn delete_notifications(bearer_token: &str, ids: &[String]) -> RestRequest<(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in ids {
-        query_params.push_str(&format!("ids={:?}&", elem));
+        query_params.push_str(&format!("ids={}&", encode(elem)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4038,7 +4039,7 @@ pub fn list_notifications(
         query_params.push_str(&format!("limit={}&", param));
     }
     if let Some(param) = cacheable_cursor {
-        query_params.push_str(&format!("cacheable_cursor={}&", param));
+        query_params.push_str(&format!("cacheable_cursor={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4072,10 +4073,10 @@ pub fn rpc_func_2(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     if let Some(param) = payload {
-        query_params.push_str(&format!("payload={}&", param));
+        query_params.push_str(&format!("payload={}&", encode(param)));
     }
     if let Some(param) = http_key {
-        query_params.push_str(&format!("http_key={}&", param));
+        query_params.push_str(&format!("http_key={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4109,7 +4110,7 @@ pub fn rpc_func(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     if let Some(param) = http_key {
-        query_params.push_str(&format!("http_key={}&", param));
+        query_params.push_str(&format!("http_key={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4248,13 +4249,13 @@ pub fn list_storage_objects(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     if let Some(param) = user_id {
-        query_params.push_str(&format!("user_id={}&", param));
+        query_params.push_str(&format!("user_id={}&", encode(param)));
     }
     if let Some(param) = limit {
         query_params.push_str(&format!("limit={}&", param));
     }
     if let Some(param) = cursor {
-        query_params.push_str(&format!("cursor={}&", param));
+        query_params.push_str(&format!("cursor={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4293,7 +4294,7 @@ pub fn list_storage_objects_2(
         query_params.push_str(&format!("limit={}&", param));
     }
     if let Some(param) = cursor {
-        query_params.push_str(&format!("cursor={}&", param));
+        query_params.push_str(&format!("cursor={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4344,7 +4345,7 @@ pub fn list_tournaments(
         query_params.push_str(&format!("limit={}&", param));
     }
     if let Some(param) = cursor {
-        query_params.push_str(&format!("cursor={}&", param));
+        query_params.push_str(&format!("cursor={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4380,16 +4381,16 @@ pub fn list_tournament_records(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in owner_ids {
-        query_params.push_str(&format!("owner_ids={:?}&", elem));
+        query_params.push_str(&format!("owner_ids={}&", encode(elem)));
     }
     if let Some(param) = limit {
         query_params.push_str(&format!("limit={}&", param));
     }
     if let Some(param) = cursor {
-        query_params.push_str(&format!("cursor={}&", param));
+        query_params.push_str(&format!("cursor={}&", encode(param)));
     }
     if let Some(param) = expiry {
-        query_params.push_str(&format!("expiry={}&", param));
+        query_params.push_str(&format!("expiry={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4512,7 +4513,7 @@ pub fn list_tournament_records_around_owner(
         query_params.push_str(&format!("limit={}&", param));
     }
     if let Some(param) = expiry {
-        query_params.push_str(&format!("expiry={}&", param));
+        query_params.push_str(&format!("expiry={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4545,13 +4546,13 @@ pub fn get_users(
     #[allow(unused_mut)]
     let mut query_params = String::new();
     for elem in ids {
-        query_params.push_str(&format!("ids={:?}&", elem));
+        query_params.push_str(&format!("ids={}&", encode(elem)));
     }
     for elem in usernames {
-        query_params.push_str(&format!("usernames={:?}&", elem));
+        query_params.push_str(&format!("usernames={}&", encode(elem)));
     }
     for elem in facebook_ids {
-        query_params.push_str(&format!("facebook_ids={:?}&", elem));
+        query_params.push_str(&format!("facebook_ids={}&", encode(elem)));
     }
 
     let authentication = Authentication::Bearer {
@@ -4592,7 +4593,7 @@ pub fn list_user_groups(
         query_params.push_str(&format!("state={}&", param));
     }
     if let Some(param) = cursor {
-        query_params.push_str(&format!("cursor={}&", param));
+        query_params.push_str(&format!("cursor={}&", encode(param)));
     }
 
     let authentication = Authentication::Bearer {
