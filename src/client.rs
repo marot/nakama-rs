@@ -1,11 +1,4 @@
-use crate::api::{
-    ApiAccountDevice, ApiChannelMessageList, ApiDeleteStorageObjectId, ApiFriendList, ApiGroup,
-    ApiGroupList, ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiMatchList,
-    ApiNotificationList, ApiReadStorageObjectId, ApiRpc, ApiSessionRefreshRequest,
-    ApiStorageObjectAcks, ApiStorageObjectList, ApiStorageObjects, ApiTournamentList,
-    ApiTournamentRecordList, ApiUserGroupList, ApiUsers, ApiValidatePurchaseResponse,
-    ApiWriteStorageObject, RestRequest,
-};
+use crate::api::{ApiAccountDevice, ApiChannelMessageList, ApiDeleteStorageObjectId, ApiFriendList, ApiGroup, ApiGroupList, ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiMatchList, ApiNotificationList, ApiReadStorageObjectId, ApiRpc, ApiSessionRefreshRequest, ApiStorageObjectAcks, ApiStorageObjectList, ApiStorageObjects, ApiTournamentList, ApiTournamentRecordList, ApiUserGroupList, ApiUsers, ApiValidatePurchaseResponse, ApiWriteStorageObject, RestRequest, ApiOverrideOperator};
 use crate::api_gen;
 use crate::api_gen::ApiAccount;
 use crate::http_adapter::ClientAdapter;
@@ -491,6 +484,7 @@ pub trait Client {
         leaderboard_id: &str,
         score: i64,
         sub_score: Option<i64>,
+        override_operator: Option<ApiOverrideOperator>,
         metadata: Option<&str>,
     ) -> Result<ApiLeaderboardRecord, Self::Error>;
 
@@ -506,6 +500,7 @@ pub trait Client {
         tournament_id: &str,
         score: i64,
         sub_score: Option<i64>,
+        override_operator: Option<ApiOverrideOperator>,
         metadata: Option<&str>,
     ) -> Result<ApiLeaderboardRecord, Self::Error>;
 }

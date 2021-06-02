@@ -1243,18 +1243,22 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         leaderboard_id: &str,
         score: i64,
         sub_score: Option<i64>,
-        metadata: Option<&str>,
+        override_operator: Option<ApiOverrideOperator>,
+        metadata: Option<&str>
     ) -> Result<ApiLeaderboardRecord, Self::Error> {
+        let operator = override_operator.unwrap_or(ApiOverrideOperator::NO_OVERRIDE);
         let request = api::write_leaderboard_record(
             &session.auth_token,
             leaderboard_id,
             WriteLeaderboardRecordRequestLeaderboardRecordWrite {
                 metadata: metadata.unwrap_or("").to_owned(),
                 score: score.to_string(),
-                subscore: sub_score.map_or("".to_owned(), |sub_score| sub_score.to_string()),
-                operator: ApiOverrideOperator::NO_OVERRIDE,
+                subscore: sub_score.map(|sub_score| sub_score.to_string()),
+                operator,
             },
         );
+
+        println!("{}", request.body);
 
         self.send(request).await
     }
@@ -1280,18 +1284,21 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
         tournament_id: &str,
         score: i64,
         sub_score: Option<i64>,
-        metadata: Option<&str>,
+        override_operator: Option<ApiOverrideOperator>,
+        metadata: Option<&str>
     ) -> Result<ApiLeaderboardRecord, Self::Error> {
+        let operator = override_operator.unwrap_or(ApiOverrideOperator::NO_OVERRIDE);
         let request = api::write_tournament_record(
             &session.auth_token,
             tournament_id,
             WriteTournamentRecordRequestTournamentRecordWrite {
-                metadata: metadata.unwrap_or("").to_owned(),
+                metadata: metadata.map(|str| str.to_owned()),
                 score: score.to_string(),
-                subscore: sub_score.map_or("".to_owned(), |sub_score| sub_score.to_string()),
-                operator: ApiOverrideOperator::NO_OVERRIDE,
+                subscore: sub_score.map(|sub_score| sub_score.to_string()),
+                operator,
             },
         );
+        println!("{:?}", request);
 
         self.send(request).await
     }

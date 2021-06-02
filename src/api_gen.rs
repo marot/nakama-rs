@@ -29,10 +29,6 @@ pub struct RestRequest<Response> {
     _marker: std::marker::PhantomData<Response>,
 }
 
-trait ToRestString {
-    fn to_string(&self) -> String;
-}
-
 /// A single user-role pair.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -41,42 +37,12 @@ pub struct GroupUserListGroupUser {
     pub user: ApiUser,
 }
 
-impl ToRestString for GroupUserListGroupUser {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"state\": {}", self.state.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"user\": {}", self.user.to_string()));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A single group-role pair.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct UserGroupListUserGroup {
     pub group: ApiGroup,
     pub state: i32,
-}
-
-impl ToRestString for UserGroupListUserGroup {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"group\": {}", self.group.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"state\": {}", self.state.to_string()));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// - UNKNOWN: Unknown environment.  - SANDBOX: Sandbox/test environment.  - PRODUCTION: Production environment.
@@ -91,14 +57,6 @@ pub enum ValidatedPurchaseEnvironment {
     PRODUCTION = 2,
 }
 
-impl ToRestString for ValidatedPurchaseEnvironment {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{}", *self as i32));
-        output
-    }
-}
-
 /// - APPLE_APP_STORE: Apple App Store  - GOOGLE_PLAY_STORE: Google Play Store  - HUAWEI_APP_GALLERY: Huawei App Gallery
 #[derive(Debug, Clone, Copy)]
 #[repr(i32)]
@@ -111,14 +69,6 @@ pub enum ValidatedPurchaseStore {
     HUAWEI_APP_GALLERY = 2,
 }
 
-impl ToRestString for ValidatedPurchaseStore {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{}", *self as i32));
-        output
-    }
-}
-
 /// Record values to write.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -126,59 +76,17 @@ pub struct WriteLeaderboardRecordRequestLeaderboardRecordWrite {
     pub metadata: String,
     pub operator: ApiOverrideOperator,
     pub score: String,
-    pub subscore: String,
-}
-
-impl ToRestString for WriteLeaderboardRecordRequestLeaderboardRecordWrite {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-
-        output.push_str(",");
-        output.push_str(&format!("\"operator\": {}", self.operator.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"score\": \"{}\"", self.score));
-
-        output.push_str(",");
-        output.push_str(&format!("\"subscore\": \"{}\"", self.subscore));
-        output.push_str("}");
-        return output;
-    }
+    pub subscore: Option<String>,
 }
 
 /// Record values to write.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct WriteTournamentRecordRequestTournamentRecordWrite {
-    pub metadata: String,
+    pub metadata: Option<String>,
     pub operator: ApiOverrideOperator,
     pub score: String,
-    pub subscore: String,
-}
-
-impl ToRestString for WriteTournamentRecordRequestTournamentRecordWrite {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-
-        output.push_str(",");
-        output.push_str(&format!("\"operator\": {}", self.operator.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"score\": \"{}\"", self.score));
-
-        output.push_str(",");
-        output.push_str(&format!("\"subscore\": \"{}\"", self.subscore));
-        output.push_str("}");
-        return output;
-    }
+    pub subscore: Option<String>,
 }
 
 /// A user with additional account details. Always the current user.
@@ -194,71 +102,12 @@ pub struct ApiAccount {
     pub wallet: String,
 }
 
-impl ToRestString for ApiAccount {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"customId\": \"{}\"", self.custom_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"devices\": [{}]", {
-            let vec_string = self
-                .devices
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-
-        output.push_str(",");
-        output.push_str(&format!("\"disableTime\": \"{}\"", self.disable_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"email\": \"{}\"", self.email));
-
-        output.push_str(",");
-        output.push_str(&format!("\"user\": {}", self.user.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"verifyTime\": \"{}\"", self.verify_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"wallet\": \"{}\"", self.wallet));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Send a Apple Sign In token to the server. Used with authenticate/link/unlink.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountApple {
     pub token: String,
     pub vars: HashMap<String, String>,
-}
-
-impl ToRestString for ApiAccountApple {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"token\": \"{}\"", self.token));
-
-        output.push_str(",");
-        output.push_str(&format!("\"vars\": {{ {} }}", {
-            let map_string = self
-                .vars
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Send a custom ID to the server. Used with authenticate/link/unlink.
@@ -269,56 +118,12 @@ pub struct ApiAccountCustom {
     pub vars: HashMap<String, String>,
 }
 
-impl ToRestString for ApiAccountCustom {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"id\": \"{}\"", self.id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"vars\": {{ {} }}", {
-            let map_string = self
-                .vars
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Send a device to the server. Used with authenticate/link/unlink and user.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountDevice {
     pub id: String,
     pub vars: HashMap<String, String>,
-}
-
-impl ToRestString for ApiAccountDevice {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"id\": \"{}\"", self.id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"vars\": {{ {} }}", {
-            let map_string = self
-                .vars
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Send an email with password to the server. Used with authenticate/link/unlink.
@@ -330,31 +135,6 @@ pub struct ApiAccountEmail {
     pub vars: HashMap<String, String>,
 }
 
-impl ToRestString for ApiAccountEmail {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"email\": \"{}\"", self.email));
-
-        output.push_str(",");
-        output.push_str(&format!("\"password\": \"{}\"", self.password));
-
-        output.push_str(",");
-        output.push_str(&format!("\"vars\": {{ {} }}", {
-            let map_string = self
-                .vars
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Send a Facebook token to the server. Used with authenticate/link/unlink.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -363,59 +143,12 @@ pub struct ApiAccountFacebook {
     pub vars: HashMap<String, String>,
 }
 
-impl ToRestString for ApiAccountFacebook {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"token\": \"{}\"", self.token));
-
-        output.push_str(",");
-        output.push_str(&format!("\"vars\": {{ {} }}", {
-            let map_string = self
-                .vars
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Send a Facebook Instant Game token to the server. Used with authenticate/link/unlink.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountFacebookInstantGame {
     pub signed_player_info: String,
     pub vars: HashMap<String, String>,
-}
-
-impl ToRestString for ApiAccountFacebookInstantGame {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!(
-            "\"signedPlayerInfo\": \"{}\"",
-            self.signed_player_info
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"vars\": {{ {} }}", {
-            let map_string = self
-                .vars
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Send Apple's Game Center account credentials to the server. Used with authenticate/link/unlink.
@@ -431,46 +164,6 @@ pub struct ApiAccountGameCenter {
     pub vars: HashMap<String, String>,
 }
 
-impl ToRestString for ApiAccountGameCenter {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"bundleId\": \"{}\"", self.bundle_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"playerId\": \"{}\"", self.player_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"publicKeyUrl\": \"{}\"", self.public_key_url));
-
-        output.push_str(",");
-        output.push_str(&format!("\"salt\": \"{}\"", self.salt));
-
-        output.push_str(",");
-        output.push_str(&format!("\"signature\": \"{}\"", self.signature));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"timestampSeconds\": \"{}\"",
-            self.timestamp_seconds
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"vars\": {{ {} }}", {
-            let map_string = self
-                .vars
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Send a Google token to the server. Used with authenticate/link/unlink.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -479,56 +172,12 @@ pub struct ApiAccountGoogle {
     pub vars: HashMap<String, String>,
 }
 
-impl ToRestString for ApiAccountGoogle {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"token\": \"{}\"", self.token));
-
-        output.push_str(",");
-        output.push_str(&format!("\"vars\": {{ {} }}", {
-            let map_string = self
-                .vars
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Send a Steam token to the server. Used with authenticate/link/unlink.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiAccountSteam {
     pub token: String,
     pub vars: HashMap<String, String>,
-}
-
-impl ToRestString for ApiAccountSteam {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"token\": \"{}\"", self.token));
-
-        output.push_str(",");
-        output.push_str(&format!("\"vars\": {{ {} }}", {
-            let map_string = self
-                .vars
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// A message sent on a channel.
@@ -550,54 +199,6 @@ pub struct ApiChannelMessage {
     pub username: String,
 }
 
-impl ToRestString for ApiChannelMessage {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"channelId\": \"{}\"", self.channel_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"code\": {}", self.code.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"content\": \"{}\"", self.content));
-
-        output.push_str(",");
-        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"groupId\": \"{}\"", self.group_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"messageId\": \"{}\"", self.message_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"persistent\": {}", self.persistent.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"roomName\": \"{}\"", self.room_name));
-
-        output.push_str(",");
-        output.push_str(&format!("\"senderId\": \"{}\"", self.sender_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"userIdOne\": \"{}\"", self.user_id_one));
-
-        output.push_str(",");
-        output.push_str(&format!("\"userIdTwo\": \"{}\"", self.user_id_two));
-
-        output.push_str(",");
-        output.push_str(&format!("\"username\": \"{}\"", self.username));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A list of channel messages, usually a result of a list operation.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -606,37 +207,6 @@ pub struct ApiChannelMessageList {
     pub messages: Vec<ApiChannelMessage>,
     pub next_cursor: String,
     pub prev_cursor: String,
-}
-
-impl ToRestString for ApiChannelMessageList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!(
-            "\"cacheableCursor\": \"{}\"",
-            self.cacheable_cursor
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"messages\": [{}]", {
-            let vec_string = self
-                .messages
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-
-        output.push_str(",");
-        output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Create a group with the current user as owner.
@@ -651,33 +221,6 @@ pub struct ApiCreateGroupRequest {
     pub open: bool,
 }
 
-impl ToRestString for ApiCreateGroupRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
-
-        output.push_str(",");
-        output.push_str(&format!("\"description\": \"{}\"", self.description));
-
-        output.push_str(",");
-        output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
-
-        output.push_str(",");
-        output.push_str(&format!("\"maxCount\": {}", self.max_count.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"name\": \"{}\"", self.name));
-
-        output.push_str(",");
-        output.push_str(&format!("\"open\": {}", self.open.to_string()));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Storage objects to delete.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -687,48 +230,11 @@ pub struct ApiDeleteStorageObjectId {
     pub version: String,
 }
 
-impl ToRestString for ApiDeleteStorageObjectId {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"collection\": \"{}\"", self.collection));
-
-        output.push_str(",");
-        output.push_str(&format!("\"key\": \"{}\"", self.key));
-
-        output.push_str(",");
-        output.push_str(&format!("\"version\": \"{}\"", self.version));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Batch delete storage objects.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiDeleteStorageObjectsRequest {
     pub object_ids: Vec<ApiDeleteStorageObjectId>,
-}
-
-impl ToRestString for ApiDeleteStorageObjectsRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"objectIds\": [{}]", {
-            let vec_string = self
-                .object_ids
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Represents an event to be passed through the server to registered event handlers.
@@ -741,34 +247,6 @@ pub struct ApiEvent {
     pub timestamp: String,
 }
 
-impl ToRestString for ApiEvent {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"external\": {}", self.external.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"name\": \"{}\"", self.name));
-
-        output.push_str(",");
-        output.push_str(&format!("\"properties\": {{ {} }}", {
-            let map_string = self
-                .properties
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-
-        output.push_str(",");
-        output.push_str(&format!("\"timestamp\": \"{}\"", self.timestamp));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A friend of a user.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -778,52 +256,12 @@ pub struct ApiFriend {
     pub user: ApiUser,
 }
 
-impl ToRestString for ApiFriend {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"state\": {}", self.state.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"user\": {}", self.user.to_string()));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A collection of zero or more friends of the user.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiFriendList {
     pub cursor: String,
     pub friends: Vec<ApiFriend>,
-}
-
-impl ToRestString for ApiFriendList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"friends\": [{}]", {
-            let vec_string = self
-                .friends
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// A group in the server.
@@ -844,51 +282,6 @@ pub struct ApiGroup {
     pub update_time: String,
 }
 
-impl ToRestString for ApiGroup {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
-
-        output.push_str(",");
-        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"creatorId\": \"{}\"", self.creator_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"description\": \"{}\"", self.description));
-
-        output.push_str(",");
-        output.push_str(&format!("\"edgeCount\": {}", self.edge_count.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"id\": \"{}\"", self.id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
-
-        output.push_str(",");
-        output.push_str(&format!("\"maxCount\": {}", self.max_count.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-
-        output.push_str(",");
-        output.push_str(&format!("\"name\": \"{}\"", self.name));
-
-        output.push_str(",");
-        output.push_str(&format!("\"open\": {}", self.open.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// One or more groups returned from a listing operation.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -897,56 +290,12 @@ pub struct ApiGroupList {
     pub groups: Vec<ApiGroup>,
 }
 
-impl ToRestString for ApiGroupList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"groups\": [{}]", {
-            let vec_string = self
-                .groups
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A list of users belonging to a group, along with their role.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiGroupUserList {
     pub cursor: String,
     pub group_users: Vec<GroupUserListGroupUser>,
-}
-
-impl ToRestString for ApiGroupUserList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"groupUsers\": [{}]", {
-            let vec_string = self
-                .group_users
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Represents a complete leaderboard record with all scores and associated metadata.
@@ -962,57 +311,9 @@ pub struct ApiLeaderboardRecord {
     pub owner_id: String,
     pub rank: String,
     pub score: String,
-    pub subscore: String,
+    pub subscore: Option<String>,
     pub update_time: String,
     pub username: String,
-}
-
-impl ToRestString for ApiLeaderboardRecord {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"expiryTime\": \"{}\"", self.expiry_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"leaderboardId\": \"{}\"", self.leaderboard_id));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"maxNumScore\": {}",
-            self.max_num_score.to_string()
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-
-        output.push_str(",");
-        output.push_str(&format!("\"numScore\": {}", self.num_score.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"ownerId\": \"{}\"", self.owner_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"rank\": \"{}\"", self.rank));
-
-        output.push_str(",");
-        output.push_str(&format!("\"score\": \"{}\"", self.score));
-
-        output.push_str(",");
-        output.push_str(&format!("\"subscore\": \"{}\"", self.subscore));
-
-        output.push_str(",");
-        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"username\": \"{}\"", self.username));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// A set of leaderboard records, may be part of a leaderboard records page or a batch of individual records.
@@ -1025,62 +326,12 @@ pub struct ApiLeaderboardRecordList {
     pub records: Vec<ApiLeaderboardRecord>,
 }
 
-impl ToRestString for ApiLeaderboardRecordList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"ownerRecords\": [{}]", {
-            let vec_string = self
-                .owner_records
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-
-        output.push_str(",");
-        output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"records\": [{}]", {
-            let vec_string = self
-                .records
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Link Steam to the current user's account.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiLinkSteamRequest {
     pub account: ApiAccountSteam,
     pub sync: bool,
-}
-
-impl ToRestString for ApiLinkSteamRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"account\": {}", self.account.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"sync\": {}", self.sync.to_string()));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Represents a realtime match.
@@ -1095,60 +346,11 @@ pub struct ApiMatch {
     pub tick_rate: i32,
 }
 
-impl ToRestString for ApiMatch {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!(
-            "\"authoritative\": {}",
-            self.authoritative.to_string()
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"handlerName\": \"{}\"", self.handler_name));
-
-        output.push_str(",");
-        output.push_str(&format!("\"label\": \"{}\"", self.label));
-
-        output.push_str(",");
-        output.push_str(&format!("\"matchId\": \"{}\"", self.match_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"size\": {}", self.size.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"tickRate\": {}", self.tick_rate.to_string()));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A list of realtime matches.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiMatchList {
     pub matches: Vec<ApiMatch>,
-}
-
-impl ToRestString for ApiMatchList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"matches\": [{}]", {
-            let vec_string = self
-                .matches
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// A notification in the server.
@@ -1164,67 +366,12 @@ pub struct ApiNotification {
     pub subject: String,
 }
 
-impl ToRestString for ApiNotification {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"code\": {}", self.code.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"content\": \"{}\"", self.content));
-
-        output.push_str(",");
-        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"id\": \"{}\"", self.id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"persistent\": {}", self.persistent.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"senderId\": \"{}\"", self.sender_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"subject\": \"{}\"", self.subject));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A collection of zero or more notifications.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiNotificationList {
     pub cacheable_cursor: String,
     pub notifications: Vec<ApiNotification>,
-}
-
-impl ToRestString for ApiNotificationList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!(
-            "\"cacheableCursor\": \"{}\"",
-            self.cacheable_cursor
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"notifications\": [{}]", {
-            let vec_string = self
-                .notifications
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Operator that can be used to override the one set in the leaderboard.   - NO_OVERRIDE: Do not override the leaderboard operator.  - BEST: Override the leaderboard operator with BEST.  - SET: Override the leaderboard operator with SET.  - INCREMENT: Override the leaderboard operator with INCREMENT.  - DECREMENT: Override the leaderboard operator with DECREMENT.
@@ -1243,14 +390,6 @@ pub enum ApiOverrideOperator {
     DECREMENT = 4,
 }
 
-impl ToRestString for ApiOverrideOperator {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-        output.push_str(&format!("{}", *self as i32));
-        output
-    }
-}
-
 /// Storage objects to get.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -1260,48 +399,11 @@ pub struct ApiReadStorageObjectId {
     pub user_id: String,
 }
 
-impl ToRestString for ApiReadStorageObjectId {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"collection\": \"{}\"", self.collection));
-
-        output.push_str(",");
-        output.push_str(&format!("\"key\": \"{}\"", self.key));
-
-        output.push_str(",");
-        output.push_str(&format!("\"userId\": \"{}\"", self.user_id));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Batch get storage objects.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiReadStorageObjectsRequest {
     pub object_ids: Vec<ApiReadStorageObjectId>,
-}
-
-impl ToRestString for ApiReadStorageObjectsRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"objectIds\": [{}]", {
-            let vec_string = self
-                .object_ids
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Execute an Lua function on the server.
@@ -1313,24 +415,6 @@ pub struct ApiRpc {
     pub payload: String,
 }
 
-impl ToRestString for ApiRpc {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"httpKey\": \"{}\"", self.http_key));
-
-        output.push_str(",");
-        output.push_str(&format!("\"id\": \"{}\"", self.id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"payload\": \"{}\"", self.payload));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A user's session used to authenticate messages.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -1338,24 +422,6 @@ pub struct ApiSession {
     pub created: bool,
     pub refresh_token: String,
     pub token: String,
-}
-
-impl ToRestString for ApiSession {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"created\": {}", self.created.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"refreshToken\": \"{}\"", self.refresh_token));
-
-        output.push_str(",");
-        output.push_str(&format!("\"token\": \"{}\"", self.token));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Log out a session, invalidate a refresh token, or log out all sessions/refresh tokens for a user.
@@ -1366,49 +432,12 @@ pub struct ApiSessionLogoutRequest {
     pub token: String,
 }
 
-impl ToRestString for ApiSessionLogoutRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"refreshToken\": \"{}\"", self.refresh_token));
-
-        output.push_str(",");
-        output.push_str(&format!("\"token\": \"{}\"", self.token));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Authenticate against the server with a refresh token.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiSessionRefreshRequest {
     pub token: String,
     pub vars: HashMap<String, String>,
-}
-
-impl ToRestString for ApiSessionRefreshRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"token\": \"{}\"", self.token));
-
-        output.push_str(",");
-        output.push_str(&format!("\"vars\": {{ {} }}", {
-            let map_string = self
-                .vars
-                .iter()
-                .map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-                .collect::<Vec<_>>();
-            map_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// An object within the storage engine.
@@ -1426,48 +455,6 @@ pub struct ApiStorageObject {
     pub version: String,
 }
 
-impl ToRestString for ApiStorageObject {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"collection\": \"{}\"", self.collection));
-
-        output.push_str(",");
-        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"key\": \"{}\"", self.key));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"permissionRead\": {}",
-            self.permission_read.to_string()
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"permissionWrite\": {}",
-            self.permission_write.to_string()
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"userId\": \"{}\"", self.user_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"value\": \"{}\"", self.value));
-
-        output.push_str(",");
-        output.push_str(&format!("\"version\": \"{}\"", self.version));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A storage acknowledgement.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -1478,47 +465,11 @@ pub struct ApiStorageObjectAck {
     pub version: String,
 }
 
-impl ToRestString for ApiStorageObjectAck {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"collection\": \"{}\"", self.collection));
-
-        output.push_str(",");
-        output.push_str(&format!("\"key\": \"{}\"", self.key));
-
-        output.push_str(",");
-        output.push_str(&format!("\"userId\": \"{}\"", self.user_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"version\": \"{}\"", self.version));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Batch of acknowledgements for the storage object write.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObjectAcks {
     pub acks: Vec<ApiStorageObjectAck>,
-}
-
-impl ToRestString for ApiStorageObjectAcks {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"acks\": [{}]", {
-            let vec_string = self.acks.iter().map(|x| x.to_string()).collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// List of storage objects.
@@ -1529,52 +480,11 @@ pub struct ApiStorageObjectList {
     pub objects: Vec<ApiStorageObject>,
 }
 
-impl ToRestString for ApiStorageObjectList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"objects\": [{}]", {
-            let vec_string = self
-                .objects
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Batch of storage objects.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiStorageObjects {
     pub objects: Vec<ApiStorageObject>,
-}
-
-impl ToRestString for ApiStorageObjects {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"objects\": [{}]", {
-            let vec_string = self
-                .objects
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// A tournament on the server.
@@ -1600,145 +510,22 @@ pub struct ApiTournament {
     pub title: String,
 }
 
-impl ToRestString for ApiTournament {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"canEnter\": {}", self.can_enter.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"category\": {}", self.category.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"description\": \"{}\"", self.description));
-
-        output.push_str(",");
-        output.push_str(&format!("\"duration\": {}", self.duration.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"endActive\": {}", self.end_active.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"endTime\": \"{}\"", self.end_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"id\": \"{}\"", self.id));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"maxNumScore\": {}",
-            self.max_num_score.to_string()
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"maxSize\": {}", self.max_size.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-
-        output.push_str(",");
-        output.push_str(&format!("\"nextReset\": {}", self.next_reset.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"size\": {}", self.size.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"sortOrder\": {}", self.sort_order.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"startActive\": {}",
-            self.start_active.to_string()
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"startTime\": \"{}\"", self.start_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"title\": \"{}\"", self.title));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A list of tournaments.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiTournamentList {
-    pub cursor: String,
+    pub cursor: Option<String>,
     pub tournaments: Vec<ApiTournament>,
-}
-
-impl ToRestString for ApiTournamentList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"tournaments\": [{}]", {
-            let vec_string = self
-                .tournaments
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// A set of tournament records which may be part of a tournament records page or a batch of individual records.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiTournamentRecordList {
-    pub next_cursor: String,
+    pub next_cursor: Option<String>,
     pub owner_records: Vec<ApiLeaderboardRecord>,
-    pub prev_cursor: String,
+    pub prev_cursor: Option<String>,
     pub records: Vec<ApiLeaderboardRecord>,
-}
-
-impl ToRestString for ApiTournamentRecordList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"nextCursor\": \"{}\"", self.next_cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"ownerRecords\": [{}]", {
-            let vec_string = self
-                .owner_records
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-
-        output.push_str(",");
-        output.push_str(&format!("\"prevCursor\": \"{}\"", self.prev_cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"records\": [{}]", {
-            let vec_string = self
-                .records
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Update a user's account details.
@@ -1753,33 +540,6 @@ pub struct ApiUpdateAccountRequest {
     pub username: String,
 }
 
-impl ToRestString for ApiUpdateAccountRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
-
-        output.push_str(",");
-        output.push_str(&format!("\"displayName\": \"{}\"", self.display_name));
-
-        output.push_str(",");
-        output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
-
-        output.push_str(",");
-        output.push_str(&format!("\"location\": \"{}\"", self.location));
-
-        output.push_str(",");
-        output.push_str(&format!("\"timezone\": \"{}\"", self.timezone));
-
-        output.push_str(",");
-        output.push_str(&format!("\"username\": \"{}\"", self.username));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Update fields in a given group.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -1790,33 +550,6 @@ pub struct ApiUpdateGroupRequest {
     pub lang_tag: String,
     pub name: String,
     pub open: bool,
-}
-
-impl ToRestString for ApiUpdateGroupRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
-
-        output.push_str(",");
-        output.push_str(&format!("\"description\": \"{}\"", self.description));
-
-        output.push_str(",");
-        output.push_str(&format!("\"groupId\": \"{}\"", self.group_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
-
-        output.push_str(",");
-        output.push_str(&format!("\"name\": \"{}\"", self.name));
-
-        output.push_str(",");
-        output.push_str(&format!("\"open\": {}", self.open.to_string()));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// A user in the server.
@@ -1843,100 +576,12 @@ pub struct ApiUser {
     pub username: String,
 }
 
-impl ToRestString for ApiUser {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"appleId\": \"{}\"", self.apple_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"avatarUrl\": \"{}\"", self.avatar_url));
-
-        output.push_str(",");
-        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"displayName\": \"{}\"", self.display_name));
-
-        output.push_str(",");
-        output.push_str(&format!("\"edgeCount\": {}", self.edge_count.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"facebookId\": \"{}\"", self.facebook_id));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"facebookInstantGameId\": \"{}\"",
-            self.facebook_instant_game_id
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"gamecenterId\": \"{}\"", self.gamecenter_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"googleId\": \"{}\"", self.google_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"id\": \"{}\"", self.id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"langTag\": \"{}\"", self.lang_tag));
-
-        output.push_str(",");
-        output.push_str(&format!("\"location\": \"{}\"", self.location));
-
-        output.push_str(",");
-        output.push_str(&format!("\"metadata\": \"{}\"", self.metadata));
-
-        output.push_str(",");
-        output.push_str(&format!("\"online\": {}", self.online.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"steamId\": \"{}\"", self.steam_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"timezone\": \"{}\"", self.timezone));
-
-        output.push_str(",");
-        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"username\": \"{}\"", self.username));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// A list of groups belonging to a user, along with the user's role in each group.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiUserGroupList {
     pub cursor: String,
     pub user_groups: Vec<UserGroupListUserGroup>,
-}
-
-impl ToRestString for ApiUserGroupList {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"cursor\": \"{}\"", self.cursor));
-
-        output.push_str(",");
-        output.push_str(&format!("\"userGroups\": [{}]", {
-            let vec_string = self
-                .user_groups
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// A collection of zero or more users.
@@ -1946,21 +591,6 @@ pub struct ApiUsers {
     pub users: Vec<ApiUser>,
 }
 
-impl ToRestString for ApiUsers {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"users\": [{}]", {
-            let vec_string = self.users.iter().map(|x| x.to_string()).collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
-}
-
 ///
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -1968,35 +598,11 @@ pub struct ApiValidatePurchaseAppleRequest {
     pub receipt: String,
 }
 
-impl ToRestString for ApiValidatePurchaseAppleRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"receipt\": \"{}\"", self.receipt));
-        output.push_str("}");
-        return output;
-    }
-}
-
 ///
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatePurchaseGoogleRequest {
     pub purchase: String,
-}
-
-impl ToRestString for ApiValidatePurchaseGoogleRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"purchase\": \"{}\"", self.purchase));
-        output.push_str("}");
-        return output;
-    }
 }
 
 ///
@@ -2007,45 +613,11 @@ pub struct ApiValidatePurchaseHuaweiRequest {
     pub signature: String,
 }
 
-impl ToRestString for ApiValidatePurchaseHuaweiRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"purchase\": \"{}\"", self.purchase));
-
-        output.push_str(",");
-        output.push_str(&format!("\"signature\": \"{}\"", self.signature));
-        output.push_str("}");
-        return output;
-    }
-}
-
 ///
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiValidatePurchaseResponse {
     pub validated_purchases: Vec<ApiValidatedPurchase>,
-}
-
-impl ToRestString for ApiValidatePurchaseResponse {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"validatedPurchases\": [{}]", {
-            let vec_string = self
-                .validated_purchases
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 /// Validated Purchase stored by Nakama.
@@ -2062,45 +634,6 @@ pub struct ApiValidatedPurchase {
     pub update_time: String,
 }
 
-impl ToRestString for ApiValidatedPurchase {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"createTime\": \"{}\"", self.create_time));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"environment\": {}",
-            self.environment.to_string()
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"productId\": \"{}\"", self.product_id));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"providerResponse\": \"{}\"",
-            self.provider_response
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"purchaseTime\": \"{}\"", self.purchase_time));
-
-        output.push_str(",");
-        output.push_str(&format!("\"store\": {}", self.store.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"transactionId\": \"{}\"", self.transaction_id));
-
-        output.push_str(",");
-        output.push_str(&format!("\"updateTime\": \"{}\"", self.update_time));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// The object to store.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -2113,63 +646,11 @@ pub struct ApiWriteStorageObject {
     pub version: String,
 }
 
-impl ToRestString for ApiWriteStorageObject {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"collection\": \"{}\"", self.collection));
-
-        output.push_str(",");
-        output.push_str(&format!("\"key\": \"{}\"", self.key));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"permissionRead\": {}",
-            self.permission_read.to_string()
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!(
-            "\"permissionWrite\": {}",
-            self.permission_write.to_string()
-        ));
-
-        output.push_str(",");
-        output.push_str(&format!("\"value\": \"{}\"", self.value));
-
-        output.push_str(",");
-        output.push_str(&format!("\"version\": \"{}\"", self.version));
-        output.push_str("}");
-        return output;
-    }
-}
-
 /// Write objects to the storage engine.
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
 pub struct ApiWriteStorageObjectsRequest {
     pub objects: Vec<ApiWriteStorageObject>,
-}
-
-impl ToRestString for ApiWriteStorageObjectsRequest {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"objects\": [{}]", {
-            let vec_string = self
-                .objects
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-        output.push_str("}");
-        return output;
-    }
 }
 
 ///
@@ -2180,21 +661,6 @@ pub struct ProtobufAny {
     pub value: String,
 }
 
-impl ToRestString for ProtobufAny {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"typeUrl\": \"{}\"", self.type_url));
-
-        output.push_str(",");
-        output.push_str(&format!("\"value\": \"{}\"", self.value));
-        output.push_str("}");
-        return output;
-    }
-}
-
 ///
 #[derive(Debug, DeJson, SerJson, Default, Clone)]
 #[nserde(default)]
@@ -2202,31 +668,6 @@ pub struct RpcStatus {
     pub code: i32,
     pub details: Vec<ProtobufAny>,
     pub message: String,
-}
-
-impl ToRestString for RpcStatus {
-    fn to_string(&self) -> String {
-        let mut output = String::new();
-
-        output.push_str("{");
-
-        output.push_str(&format!("\"code\": {}", self.code.to_string()));
-
-        output.push_str(",");
-        output.push_str(&format!("\"details\": [{}]", {
-            let vec_string = self
-                .details
-                .iter()
-                .map(|x| x.to_string())
-                .collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-
-        output.push_str(",");
-        output.push_str(&format!("\"message\": \"{}\"", self.message));
-        output.push_str("}");
-        return output;
-    }
 }
 /// A healthcheck which load balancers can use to check the service.
 pub fn healthcheck(bearer_token: &str) -> RestRequest<()> {
@@ -2289,7 +730,7 @@ pub fn update_account(bearer_token: &str, body: ApiUpdateAccountRequest) -> Rest
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Put;
 
@@ -2326,7 +767,7 @@ pub fn authenticate_apple(
         username: basic_auth_username.to_owned(),
         password: basic_auth_password.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2363,7 +804,7 @@ pub fn authenticate_custom(
         username: basic_auth_username.to_owned(),
         password: basic_auth_password.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2400,7 +841,7 @@ pub fn authenticate_device(
         username: basic_auth_username.to_owned(),
         password: basic_auth_password.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2437,7 +878,7 @@ pub fn authenticate_email(
         username: basic_auth_username.to_owned(),
         password: basic_auth_password.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2478,7 +919,7 @@ pub fn authenticate_facebook(
         username: basic_auth_username.to_owned(),
         password: basic_auth_password.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2515,7 +956,7 @@ pub fn authenticate_facebook_instant_game(
         username: basic_auth_username.to_owned(),
         password: basic_auth_password.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2552,7 +993,7 @@ pub fn authenticate_game_center(
         username: basic_auth_username.to_owned(),
         password: basic_auth_password.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2589,7 +1030,7 @@ pub fn authenticate_google(
         username: basic_auth_username.to_owned(),
         password: basic_auth_password.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2630,7 +1071,7 @@ pub fn authenticate_steam(
         username: basic_auth_username.to_owned(),
         password: basic_auth_password.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2654,7 +1095,7 @@ pub fn link_apple(bearer_token: &str, body: ApiAccountApple) -> RestRequest<()> 
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2678,7 +1119,7 @@ pub fn link_custom(bearer_token: &str, body: ApiAccountCustom) -> RestRequest<()
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2702,7 +1143,7 @@ pub fn link_device(bearer_token: &str, body: ApiAccountDevice) -> RestRequest<()
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2726,7 +1167,7 @@ pub fn link_email(bearer_token: &str, body: ApiAccountEmail) -> RestRequest<()> 
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2757,7 +1198,7 @@ pub fn link_facebook(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2784,7 +1225,7 @@ pub fn link_facebook_instant_game(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2808,7 +1249,7 @@ pub fn link_game_center(bearer_token: &str, body: ApiAccountGameCenter) -> RestR
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2832,7 +1273,7 @@ pub fn link_google(bearer_token: &str, body: ApiAccountGoogle) -> RestRequest<()
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2856,7 +1297,7 @@ pub fn link_steam(bearer_token: &str, body: ApiLinkSteamRequest) -> RestRequest<
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2885,7 +1326,7 @@ pub fn session_refresh(
         username: basic_auth_username.to_owned(),
         password: basic_auth_password.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2909,7 +1350,7 @@ pub fn unlink_apple(bearer_token: &str, body: ApiAccountApple) -> RestRequest<()
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2933,7 +1374,7 @@ pub fn unlink_custom(bearer_token: &str, body: ApiAccountCustom) -> RestRequest<
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2957,7 +1398,7 @@ pub fn unlink_device(bearer_token: &str, body: ApiAccountDevice) -> RestRequest<
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -2981,7 +1422,7 @@ pub fn unlink_email(bearer_token: &str, body: ApiAccountEmail) -> RestRequest<()
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3005,7 +1446,7 @@ pub fn unlink_facebook(bearer_token: &str, body: ApiAccountFacebook) -> RestRequ
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3032,7 +1473,7 @@ pub fn unlink_facebook_instant_game(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3056,7 +1497,7 @@ pub fn unlink_game_center(bearer_token: &str, body: ApiAccountGameCenter) -> Res
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3080,7 +1521,7 @@ pub fn unlink_google(bearer_token: &str, body: ApiAccountGoogle) -> RestRequest<
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3104,7 +1545,7 @@ pub fn unlink_steam(bearer_token: &str, body: ApiAccountSteam) -> RestRequest<()
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3169,7 +1610,7 @@ pub fn event(bearer_token: &str, body: ApiEvent) -> RestRequest<()> {
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3332,7 +1773,7 @@ pub fn import_facebook_friends(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3363,7 +1804,7 @@ pub fn import_steam_friends(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3426,7 +1867,7 @@ pub fn create_group(bearer_token: &str, body: ApiCreateGroupRequest) -> RestRequ
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3481,7 +1922,7 @@ pub fn update_group(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Put;
 
@@ -3758,7 +2199,7 @@ pub fn validate_purchase_apple(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3785,7 +2226,7 @@ pub fn validate_purchase_google(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3812,7 +2253,7 @@ pub fn validate_purchase_huawei(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -3912,7 +2353,7 @@ pub fn write_leaderboard_record(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -4159,7 +2600,7 @@ pub fn session_logout(bearer_token: &str, body: ApiSessionLogoutRequest) -> Rest
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -4186,7 +2627,7 @@ pub fn read_storage_objects(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -4213,7 +2654,7 @@ pub fn write_storage_objects(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Put;
 
@@ -4240,7 +2681,7 @@ pub fn delete_storage_objects(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Put;
 
@@ -4445,7 +2886,7 @@ pub fn write_tournament_record2(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Post;
 
@@ -4474,7 +2915,7 @@ pub fn write_tournament_record(
     let authentication = Authentication::Bearer {
         token: bearer_token.to_owned(),
     };
-    let body_json = body.to_string();
+    let body_json = body.serialize_json();
 
     let method = Method::Put;
 

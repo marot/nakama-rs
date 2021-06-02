@@ -60,10 +60,6 @@ pub struct RestRequest<Response> {
   _marker: std::marker::PhantomData<Response>
 }
 
-trait ToRestString {
-    fn to_string(&self) -> String;
-}
-
 {{- range $defname, $definition := .Definitions }}
 {{- $classname := $defname | title }}
 
@@ -77,14 +73,6 @@ pub enum {{ $classname }} {
     /// {{ (index (splitEnumDescription $definition.Description) $idx) }}
     {{ $enum }} = {{ $idx }},
     {{- end }}
-}
-
-impl ToRestString for {{ $classname }} {
-    fn to_string(&self) -> String {
-	let mut output = String::new();
-	output.push_str(&format!("{}", *self as i32));
-	output
-    }
 }
 
 {{- else }}
@@ -107,7 +95,11 @@ pub struct {{ $classname }} {
     pub {{ $fieldname }}: bool,
 
     {{- else if eq $property.Type "string" }}
+    {{- if contains $property.Description "optional" }}
+    pub {{ $fieldname }}: Option<String>,
+    {{- else }}
     pub {{ $fieldname }}: String,
+    {{- end }}
 
     {{- else if eq $property.Type "array" }}
 	{{- if eq $property.Items.Type "string" }}
@@ -139,43 +131,6 @@ pub struct {{ $classname }} {
     {{- end }}
 }
 
-impl ToRestString for {{ $classname }} {
-    fn to_string(&self) -> String {
-	let mut output = String::new();
-
-        {{ $isPreviousField := false }}
-        output.push_str("{");
-	{{- range $propname, $property := $definition.Properties }}
-        {{- $fieldname := $propname | camelToSnake }}
-        {{ if eq $isPreviousField true }}
-        output.push_str(",");
-        {{- end }}
-        {{- $isPreviousField = true }}
-
-	{{- if eq $property.Type "array" }}
-        output.push_str(&format!("\"{{ $propname }}\": [{}]", {
-            let vec_string = self.{{ $fieldname }}.iter().map(|x| x.to_string()).collect::<Vec<_>>();
-            vec_string.join(", ")
-        }));
-	{{- else if eq $property.Type "object" }}
-  	output.push_str(&format!("\"{{ $propname }}\": {{"{{"}} {} {{"}}"}}", {
-	    let map_string = self
-		.{{$fieldname}}
-		.iter()
-		.map(|(key, value)| format!("\"{}\": \"{}\"", key.to_string(), value.to_string()))
-		.collect::<Vec<_>>();
-	    map_string.join(", ")
-	}));
-	{{- else if eq $property.Type "string" }}
-	output.push_str(&format!("\"{{ $propname }}\": \"{}\"", self.{{ $fieldname }}));
-	{{- else }}
-	output.push_str(&format!("\"{{ $propname }}\": {}", self.{{ $fieldname }}.to_string()));
-	{{- end }}
-	{{- end }}
-        output.push_str("}");
-	return output;
-    }
-}
 {{- end }}
 {{- end }}
 
@@ -306,7 +261,11 @@ Authentication::Basic {
     {{- range $parameter := $operation.Parameters }}
     {{- if eq $parameter.In "body" }}
     {{- $hasBody = true }}
+    {{- if eq $parameter.Schema.Type "string" }}
     let body_json = {{ $parameter.Name }}.to_string();
+    {{- else }}
+    let body_json = {{ $parameter.Name }}.serialize_json();
+    {{- end }}
     {{- end }}
     {{- end }}
     {{ if eq $hasBody false }}
@@ -540,6 +499,9 @@ func main() {
 		"uppercase":            strings.ToUpper,
 		"stripOperationPrefix": stripOperationPrefix,
 		"cleanRef":     convertRefToClassName,
+		"contains": func(a string, b string) bool {
+		    return strings.Contains(a, b)
+		},
 		"isRefToEnum": func(ref string) bool {
 			// swagger schema definition keys have inconsistent casing
 			var camelOk bool
