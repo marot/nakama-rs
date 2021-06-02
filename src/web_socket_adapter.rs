@@ -42,8 +42,12 @@ impl qws::Handler for WebSocketClient {
         if let Some(addr) = shake.remote_addr()? {
             let result = self.send(Message::Connected);
             match result {
-                Ok(_) => {debug!("Connection with {} now open", addr);}
-                Err(err) => {error!("Failed to send {}", err); }
+                Ok(_) => {
+                    debug!("Connection with {} now open", addr);
+                }
+                Err(err) => {
+                    error!("Failed to send {}", err);
+                }
             }
         }
         Ok(())
@@ -225,7 +229,7 @@ mod test {
         SimpleLogger::new().init().unwrap();
 
         let mut socket_adapter = WebSocketAdapter::new();
-        socket_adapter.connect("ws://eco.websocket.org", 0);
+        socket_adapter.connect("ws://echo.websocket.org", 0);
         socket_adapter.on_received(move |data| println!("{:?}", data));
         sleep(Duration::from_secs(1));
 

@@ -4,11 +4,10 @@ use nakama_rs::client::Client;
 use nakama_rs::default_client::DefaultClient;
 use nakama_rs::http_adapter::RestHttpAdapter;
 use nakama_rs::session::Session;
-
-mod helpers;
+use nakama_rs::test_helpers;
 
 async fn client_with_storage_object() -> (DefaultClient<RestHttpAdapter>, Session) {
-    let (client, mut session) = helpers::authenticated_client("storageclientid").await;
+    let (client, mut session) = test_helpers::authenticated_client("storageclientid").await;
     client
         .write_storage_objects(
             &mut session,
@@ -40,7 +39,7 @@ async fn client_with_storage_object() -> (DefaultClient<RestHttpAdapter>, Sessio
 #[test]
 fn test_write_storage() {
     block_on(async {
-        let (client, mut session) = helpers::authenticated_client("storageclientid").await;
+        let (client, mut session) = test_helpers::authenticated_client("storageclientid").await;
         let result = client
             .write_storage_objects(
                 &mut session,

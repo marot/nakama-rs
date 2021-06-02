@@ -1,13 +1,13 @@
-use nakama_rs::client::Client;
-use nakama_rs::default_client::DefaultClient;
-use nakama_rs::helper::tick_socket;
-use nakama_rs::socket::Socket;
-use nakama_rs::web_socket::WebSocket;
+use crate::client::Client;
+use crate::default_client::DefaultClient;
+use crate::helper::tick_socket;
+use crate::socket::Socket;
+use crate::web_socket::WebSocket;
 
-use nakama_rs::api::{ApiAccount, ApiGroup};
-use nakama_rs::http_adapter::RestHttpAdapter;
-use nakama_rs::session::Session;
-use nakama_rs::web_socket_adapter::WebSocketAdapter;
+use crate::api::{ApiAccount, ApiGroup};
+use crate::http_adapter::RestHttpAdapter;
+use crate::session::Session;
+use crate::web_socket_adapter::WebSocketAdapter;
 use std::collections::HashMap;
 
 pub async fn remove_group_if_exists<C: Client>(
