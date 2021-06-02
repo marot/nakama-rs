@@ -1,9 +1,5 @@
-use crate::client::Client;
-use crate::default_client::{DefaultClient, DefaultClientError};
+use crate::default_client::DefaultClientError;
 use crate::http_adapter::RestHttpAdapter;
-use crate::socket::Socket;
-use crate::web_socket::WebSocket;
-use crate::web_socket_adapter::WebSocketAdapter;
 
 pub enum NakamaError {
     ClientError(DefaultClientError<RestHttpAdapter>),

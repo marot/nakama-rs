@@ -17,15 +17,12 @@ use log::{error, trace};
 use nanoserde::{DeJson, DeJsonErr, SerJson};
 use std::collections::HashMap;
 use std::error;
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::{Arc, Mutex};
-use std::task::{Context, Poll, Waker};
 
 use crate::default_client::str_slice_to_owned;
-use crate::web_socket_adapter::{WebSocketAdapter, WebSocketAdapterError};
+use crate::web_socket_adapter::{WebSocketAdapter};
 use oneshot;
-use oneshot::RecvError;
+use oneshot::{RecvError};
 use std::fmt::{Debug, Display, Formatter};
 
 pub enum WebSocketError<A: SocketAdapter> {
@@ -59,10 +56,7 @@ impl<A: SocketAdapter> error::Error for WebSocketError<A> {}
 #[derive(Default)]
 struct SharedState {
     cid: i64,
-    wakers: HashMap<i64, Waker>,
     connected: Vec<oneshot::Sender<()>>,
-    status_presence: Vec<oneshot::Sender<StatusPresenceEvent>>,
-    party_close: Vec<oneshot::Sender<PartyClose>>,
     responses: HashMap<i64, oneshot::Sender<Result<WebSocketMessageEnvelope, DeJsonErr>>>,
     timeouts: HashMap<i64, i64>,
     on_closed: Option<Box<dyn Fn() + Send + 'static>>,
@@ -100,7 +94,7 @@ impl<A: SocketAdapter> Clone for WebSocket<A> {
 
 fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
     trace!("handle_message: Received message: {:?}", msg);
-    let mut result: Result<WebSocketMessageEnvelope, DeJsonErr> = DeJson::deserialize_json(&msg);
+    let result: Result<WebSocketMessageEnvelope, DeJsonErr> = DeJson::deserialize_json(&msg);
     let mut shared_state = shared_state.lock().unwrap();
     match result {
         Ok(event) => {
@@ -108,7 +102,10 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
                 trace!("handle_message: Received message with cid");
                 let cid = cid.parse::<i64>().unwrap();
                 if let Some(response_event) = shared_state.responses.remove(&cid) {
-                    response_event.send(Ok(event));
+                    let result = response_event.send(Ok(event));
+                    if let Err(err) = result {
+                        error!("handle_message: send error: {}", err);
+                    }
                 }
                 return;
             }
@@ -157,9 +154,6 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
                 return;
             }
             if let Some(message) = event.party_close {
-                shared_state.party_close.drain(..).for_each(|tx| {
-                    tx.send(message.clone());
-                });
                 if let Some(ref cb) = shared_state.on_received_party_close {
                     cb(message)
                 }
@@ -190,10 +184,6 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
                 return;
             }
             if let Some(message) = event.status_presence_event {
-                shared_state.status_presence.drain(..).for_each(|tx| {
-                    tx.send(message.clone());
-                });
-
                 if let Some(ref cb) = shared_state.on_received_status_presence {
                     cb(message)
                 }
@@ -214,7 +204,7 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
         }
         Err(err) => {
             error!("handle_message: Failed to parse json: {}", err);
-            let mut result: Result<WebSocketMessageEnvelopeHeader, DeJsonErr> =
+            let result: Result<WebSocketMessageEnvelopeHeader, DeJsonErr> =
                 DeJson::deserialize_json(&msg);
             match result {
                 Ok(event) => {
@@ -224,7 +214,10 @@ fn handle_message(shared_state: &Arc<Mutex<SharedState>>, msg: &String) {
                         let cid = cid.parse::<i64>().unwrap();
                         if let Some(response_event) = shared_state.responses.remove(&cid) {
                             // Send DeJsonErr
-                            response_event.send(Err(err));
+                            let result = response_event.send(Err(err));
+                            if let Err(err) = result {
+                                error!("handle_message: Received send error: {}", err)
+                            }
                         }
                         return;
                     }
@@ -296,7 +289,10 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
                         .connected
                         .drain(..)
                         .for_each(|sender| {
-                            sender.send(());
+                            let result = sender.send(());
+                            if let Err(err) = result {
+                                error!("on_connected: Received send error: {}", err)
+                            }
                         });
                 }
             });
@@ -343,13 +339,20 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
         )
     }
 
+    fn make_envelope(&self) -> WebSocketMessageEnvelope {
+        WebSocketMessageEnvelope {
+            ..Default::default()
+        }
+    }
+
     #[inline]
-    fn send(&self, data: &str, reliable: bool) {
+    fn send(&self, data: &str, reliable: bool) -> Result<(), WebSocketError<A>> {
         trace!("send: Sending message: {:?}", data);
         self.adapter
             .lock()
             .expect("panic inside other mutex!")
-            .send(data, reliable);
+            .send(data, reliable)
+            .map_err(|err| WebSocketError::AdapterError(err))
     }
 
     async fn wait_response(
@@ -376,28 +379,6 @@ impl<A: SocketAdapter + Send> WebSocket<A> {
                 return Err(WebSocketError::DeJsonError(error));
             }
         }
-    }
-
-    pub async fn party_close(&self) -> PartyClose {
-        let (tx, rx) = oneshot::channel::<PartyClose>();
-
-        {
-            let mut shared_state = self.shared_state.lock().unwrap();
-            shared_state.party_close.push(tx);
-        }
-
-        rx.await.unwrap()
-    }
-
-    pub async fn status_presence(&self) -> StatusPresenceEvent {
-        let (tx, rx) = oneshot::channel::<StatusPresenceEvent>();
-
-        {
-            let mut shared_state = self.shared_state.lock().unwrap();
-            shared_state.status_presence.push(tx);
-        }
-
-        rx.await.unwrap()
     }
 }
 
@@ -550,7 +531,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         self.wait_response(cid).await?;
         Ok(())
@@ -574,7 +555,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let envelope = self.wait_response(cid).await?;
 
@@ -601,7 +582,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let envelope = self.wait_response(cid).await?;
 
@@ -615,14 +596,14 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         self.wait_response(cid).await?;
 
         Ok(())
     }
 
-    async fn close(&self) {
+    async fn close(&self) -> Result<(), Self::Error> {
         todo!()
     }
 
@@ -644,7 +625,10 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
             .unwrap()
             .connect(&ws_addr, connect_timeout);
 
-        rx.await;
+        let result = rx.await;
+        if let Err(err) = result {
+            error!("connect: RecvError: {}", err);
+        }
     }
 
     async fn create_match(&self) -> Result<Match, Self::Error> {
@@ -652,7 +636,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         envelope.match_create = Some(MatchCreate {});
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let envelope = self.wait_response(cid).await?;
 
@@ -664,7 +648,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         envelope.party_create = Some(PartyCreate { max_size, open });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.party.unwrap())
@@ -682,7 +666,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.status.unwrap())
@@ -704,7 +688,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.channel.unwrap())
@@ -717,7 +701,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         self.wait_response(cid).await?;
         Ok(())
@@ -732,7 +716,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.new_match.unwrap())
@@ -751,30 +735,30 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.new_match.unwrap())
     }
 
-    async fn leave_chat(&self, channel_id: &str) {
-        let (mut envelope, cid) = self.make_envelope_with_cid();
+    async fn leave_chat(&self, channel_id: &str) -> Result<(), Self::Error> {
+        let mut envelope = self.make_envelope();
         envelope.channel_leave = Some(ChannelLeave {
             channel_id: channel_id.to_owned(),
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)
     }
 
-    async fn leave_match(&self, match_id: &str) {
-        let (mut envelope, cid) = self.make_envelope_with_cid();
+    async fn leave_match(&self, match_id: &str) -> Result<(), Self::Error> {
+        let mut envelope= self.make_envelope();
         envelope.match_leave = Some(MatchLeave {
             match_id: match_id.to_owned(),
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)
     }
 
     async fn leave_party(&self, party_id: &str) -> Result<(), Self::Error> {
@@ -784,7 +768,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         self.wait_response(cid).await?;
         Ok(())
@@ -800,7 +784,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.party_join_request.unwrap())
@@ -814,7 +798,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         self.wait_response(cid).await?;
         Ok(())
@@ -832,31 +816,31 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.channel_message_ack.unwrap())
     }
 
-    async fn remove_matchmaker(&self, ticket: &str) {
-        let (mut envelope, cid) = self.make_envelope_with_cid();
+    async fn remove_matchmaker(&self, ticket: &str) -> Result<(), Self::Error> {
+        let mut envelope = self.make_envelope();
         envelope.matchmaker_remove = Some(MatchmakerRemove {
             ticket: ticket.to_owned(),
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)
     }
 
-    async fn remove_matchmaker_party(&self, party_id: &str, ticket: &str) {
-        let (mut envelope, cid) = self.make_envelope_with_cid();
+    async fn remove_matchmaker_party(&self, party_id: &str, ticket: &str) -> Result<(), Self::Error> {
+        let mut envelope = self.make_envelope();
         envelope.party_matchmaker_remove = Some(PartyMatchmakerRemove {
             party_id: party_id.to_owned(),
             ticket: ticket.to_owned(),
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)
     }
 
     async fn remove_party_member(&self, party_id: &str, presence: UserPresence) -> Result<(), Self::Error> {
@@ -867,7 +851,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         self.wait_response(cid).await?;
         Ok(())
@@ -882,13 +866,13 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.rpc.unwrap())
     }
 
-    async fn rpc_bytes(&self, func_id: &str, payload: &[u8]) -> Result<ApiRpc, Self::Error> {
+    async fn rpc_bytes(&self, func_id: &str, _payload: &[u8]) -> Result<ApiRpc, Self::Error> {
         let (mut envelope, cid) = self.make_envelope_with_cid();
         envelope.rpc = Some(ApiRpc {
             id: func_id.to_owned(),
@@ -898,7 +882,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.rpc.unwrap())
@@ -910,8 +894,8 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         op_code: i64,
         state: &[u8],
         presences: &[UserPresence],
-    ) {
-        let (mut envelope, cid) = self.make_envelope_with_cid();
+    ) -> Result<(), Self::Error> {
+        let mut envelope = self.make_envelope();
         envelope.match_data_send = Some(MatchDataSend {
             match_id: match_id.to_owned(),
             op_code,
@@ -922,11 +906,11 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)
     }
 
-    async fn send_party_data(&self, party_id: &str, op_code: i64, data: &[u8]) {
-        let (mut envelope, cid) = self.make_envelope_with_cid();
+    async fn send_party_data(&self, party_id: &str, op_code: i64, data: &[u8]) -> Result<(), Self::Error> {
+        let mut envelope = self.make_envelope();
         envelope.party_data_send = Some(PartyDataSend {
             party_id: party_id.to_owned(),
             op_code,
@@ -934,17 +918,17 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)
     }
 
-    async fn unfollow_users(&self, user_ids: &[&str]) {
-        let (mut envelope, cid) = self.make_envelope_with_cid();
+    async fn unfollow_users(&self, user_ids: &[&str]) -> Result<(), Self::Error> {
+        let mut envelope = self.make_envelope();
         envelope.status_unfollow = Some(StatusUnfollow {
             user_ids: str_slice_to_owned(user_ids),
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)
     }
 
     async fn update_chat_message(
@@ -961,20 +945,20 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.channel_message_ack.unwrap())
     }
 
-    async fn update_status(&self, status: &str) {
-        let (mut envelope, cid) = self.make_envelope_with_cid();
+    async fn update_status(&self, status: &str) -> Result<(), Self::Error> {
+        let mut envelope = self.make_envelope();
         envelope.status_update = Some(StatusUpdate {
             status: status.to_owned(),
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)
     }
 
     async fn write_chat_message(
@@ -989,7 +973,7 @@ impl<A: SocketAdapter + Send> Socket for WebSocket<A> {
         });
 
         let json = envelope.serialize_json();
-        self.send(&json, false);
+        self.send(&json, false)?;
 
         let result_envelope = self.wait_response(cid).await?;
         Ok(result_envelope.channel_message_ack.unwrap())

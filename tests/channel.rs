@@ -1,26 +1,14 @@
 mod helpers;
 use futures::executor::block_on;
-use nakama_rs::client::Client;
-use nakama_rs::default_client::DefaultClient;
-use nakama_rs::error::NakamaError;
-use nakama_rs::helper::tick_socket;
-use nakama_rs::socket::{ChannelJoinType, Socket};
-use nakama_rs::web_socket::WebSocket;
-
-use nakama_rs::api::ApiAccount;
-use nakama_rs::session::Session;
-use nakama_rs::web_socket_adapter::WebSocketAdapter;
+use nakama_rs::socket::Socket;
 use simple_logger::SimpleLogger;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::sync::mpsc;
 use std::thread::sleep;
 use std::time::Duration;
 
 #[test]
 fn test_channel_room_creation() {
     let future = async {
-        let (socket1, socket2, ..) =
+        let (socket1, ..) =
             helpers::sockets_with_users("socketchannel1", "socketchannel2").await;
         let channel = socket1.join_chat("MyRoom", 1, false, false).await;
         assert_eq!(channel.unwrap().room_name, "MyRoom".to_owned())
@@ -31,11 +19,11 @@ fn test_channel_room_creation() {
 
 #[test]
 fn test_channel_direct_message_creation() {
-    SimpleLogger::new().init();
+    SimpleLogger::new().init().expect("Failed to initialize logger");
     let future = async {
         let (socket1, mut socket2, account1, account2) =
             helpers::sockets_with_users("socketchannel1", "socketchannel2").await;
-        let channel = socket1.join_chat(&account2.user.id, 2, false, false).await;
+        socket1.join_chat(&account2.user.id, 2, false, false).await.expect("Failed to join chat");
         // The user will receive a notification that a user wants to chat and can then join.
         let _ = socket2.join_chat(&account1.user.id, 2, false, false).await;
         socket2.on_received_channel_presence(|presence| {
@@ -56,17 +44,17 @@ fn test_channel_direct_message_creation() {
 #[test]
 fn test_channel_leave() {
     block_on(async {
-        let (socket1, socket2, ..) =
+        let (socket1, ..) =
             helpers::sockets_with_users("socketchannel1", "socketchannel2").await;
         let channel = socket1.join_chat("MyRoom", 1, false, false).await.unwrap();
-        socket1.leave_chat(&channel.id).await;
+        socket1.leave_chat(&channel.id).await.expect("Failed to leave chat");
     });
 }
 
 #[test]
 fn test_channel_message() {
     block_on(async {
-        let (socket1, socket2, ..) =
+        let (socket1, ..) =
             helpers::sockets_with_users("socketchannel1", "socketchannel2").await;
         let channel = socket1.join_chat("MyRoom", 1, true, false).await.unwrap();
         let ack = socket1

@@ -1,9 +1,9 @@
-use proc_macro::{Ident, TokenStream, TokenTree};
+use proc_macro::{TokenStream};
 
 /// A simple macro that can be used to annotate `async fn main` so that it
 /// executes and waits for the future to resolve.
 #[proc_macro_attribute]
-pub fn nakama_main(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn nakama_main(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let result: TokenStream = format!(
         "
         use simple_logger::SimpleLogger;

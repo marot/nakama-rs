@@ -1,5 +1,5 @@
 use crate::socket_adapter::SocketAdapter;
-use log::{debug, error, trace, Level};
+use log::{debug, error, trace};
 use qws;
 use qws::{CloseCode, Handshake};
 use std::error::Error;
@@ -40,8 +40,11 @@ impl qws::Handler for WebSocketClient {
 
     fn on_open(&mut self, shake: Handshake) -> qws::Result<()> {
         if let Some(addr) = shake.remote_addr()? {
-            self.send(Message::Connected);
-            debug!("Connection with {} now open", addr);
+            let result = self.send(Message::Connected);
+            match result {
+                Ok(_) => {debug!("Connection with {} now open", addr);}
+                Err(err) => {error!("Failed to send {}", err); }
+            }
         }
         Ok(())
     }
@@ -75,7 +78,10 @@ impl qws::Handler for WebSocketClient {
             }
         }
 
-        self.send(Message::Error(err));
+        let result = self.send(Message::Error(err));
+        if let Err(err) = result {
+            error!("on_error: SendError: {}", err);
+        }
     }
 }
 
@@ -224,7 +230,7 @@ mod test {
         sleep(Duration::from_secs(1));
 
         println!("Sending!");
-        socket_adapter.send("Hello", false);
+        socket_adapter.send("Hello", false).unwrap();
         sleep(Duration::from_secs(1));
         println!("Tick!");
         socket_adapter.tick();

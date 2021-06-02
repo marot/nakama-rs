@@ -3,31 +3,29 @@ use nakama_rs::socket::Socket;
 use std::sync::mpsc;
 use simple_logger::SimpleLogger;
 use log::LevelFilter;
-use std::thread::sleep;
-use std::time::Duration;
 
 mod helpers;
 
 #[test]
 fn create_and_close_party() {
     block_on(async {
-        let (socket1, socket2, account1, account2) =
+        let (socket1, _, _, _) =
             helpers::sockets_with_users("partyuserone", "partyusertwo").await;
 
         let party = socket1.create_party(true, 2).await.unwrap();
-        socket1.close_party(&party.party_id).await;
+        socket1.close_party(&party.party_id).await.expect("Failed to close party");
     })
 }
 
 #[test]
 fn join_and_leave_party() {
     block_on(async {
-        let (socket1, socket2, account1, account2) =
+        let (socket1, socket2, _, _) =
             helpers::sockets_with_users("partyuserone", "partyusertwo").await;
 
         let party = socket1.create_party(true, 2).await.unwrap();
-        socket2.join_party(&party.party_id).await;
-        socket2.leave_party(&party.party_id).await;
+        socket2.join_party(&party.party_id).await.expect("Failed to join party");
+        socket2.leave_party(&party.party_id).await.expect("Failed to leave party");
     })
 }
 
@@ -36,16 +34,16 @@ fn promote_and_remove_party_member() {
 
     block_on(async {
         let (tx, rx) = mpsc::channel();
-        let (mut socket1, mut socket2, account1, account2) =
+        let (mut socket1, socket2, ..) =
             helpers::sockets_with_users("partyuserone", "partyusertwo").await;
 
         socket1.on_received_party_presence(move |presence| {
-            tx.send(presence);
+            tx.send(presence).expect("Failed to send party presence");
         });
 
         let party = socket1.create_party(true, 2).await.unwrap();
         // Wait for first party presence event
-        rx.recv();
+        rx.recv().expect("Failed to recv party presence");
 
         socket2.join_party(&party.party_id).await.unwrap();
         // Wait for joined user
@@ -60,7 +58,7 @@ fn promote_and_remove_party_member() {
 #[test]
 fn test_private_group() {
     block_on(async {
-        let (mut socket1, socket2, account1, account2) =
+        let (socket1, socket2, ..) =
             helpers::sockets_with_users("partyuserone", "partyusertwo").await;
 
         let party = socket1.create_party(false, 2).await.unwrap();
@@ -81,16 +79,16 @@ fn test_send_party_data() {
         .unwrap();
     block_on(async {
         let (tx, rx) = mpsc::channel();
-        let (mut socket1, mut socket2, account1, account2) =
+        let (socket1, mut socket2, _, _) =
             helpers::sockets_with_users("partyuserone", "partyusertwo").await;
 
         let party = socket1.create_party(true, 2).await.unwrap();
         socket2.join_party(&party.party_id).await.unwrap();
 
         socket2.on_received_party_data(move |data| {
-            tx.send(data);
+            tx.send(data).expect("Failed to send data");
         });
-        socket1.send_party_data(&party.party_id, 1, &[1,2,3,4]).await;
+        socket1.send_party_data(&party.party_id, 1, &[1,2,3,4]).await.expect("Failed to send party data");
 
         println!("{:?}", rx.recv());
     })

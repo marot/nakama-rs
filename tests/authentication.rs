@@ -1,8 +1,6 @@
 use futures::executor::block_on;
 use nakama_rs::client::Client;
 use nakama_rs::default_client::DefaultClient;
-use nakama_rs::http_adapter::RestHttpAdapter;
-use nakama_rs::session::Session;
 use std::collections::HashMap;
 
 #[test]

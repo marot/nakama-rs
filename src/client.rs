@@ -1,12 +1,9 @@
-use crate::api::{ApiAccountDevice, ApiChannelMessageList, ApiDeleteStorageObjectId, ApiFriendList, ApiGroup, ApiGroupList, ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiMatchList, ApiNotificationList, ApiReadStorageObjectId, ApiRpc, ApiSessionRefreshRequest, ApiStorageObjectAcks, ApiStorageObjectList, ApiStorageObjects, ApiTournamentList, ApiTournamentRecordList, ApiUserGroupList, ApiUsers, ApiValidatePurchaseResponse, ApiWriteStorageObject, RestRequest, ApiOverrideOperator};
-use crate::api_gen;
+use crate::api::{ApiChannelMessageList, ApiDeleteStorageObjectId, ApiFriendList, ApiGroup, ApiGroupList, ApiGroupUserList, ApiLeaderboardRecord, ApiLeaderboardRecordList, ApiMatchList, ApiNotificationList, ApiReadStorageObjectId, ApiRpc, ApiStorageObjectAcks, ApiStorageObjectList, ApiStorageObjects, ApiTournamentList, ApiTournamentRecordList, ApiUserGroupList, ApiUsers, ApiValidatePurchaseResponse, ApiWriteStorageObject, ApiOverrideOperator};
 use crate::api_gen::ApiAccount;
-use crate::http_adapter::ClientAdapter;
 use crate::session::Session;
 use async_trait::async_trait;
 use std::collections::HashMap;
 use std::error::Error;
-use std::fmt::{Debug, Display, Formatter};
 
 #[async_trait]
 pub trait Client {

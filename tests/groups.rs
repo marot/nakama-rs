@@ -84,7 +84,7 @@ fn test_ban_group_users() {
 #[test]
 fn test_delete_group() {
     block_on(async {
-        let (client, mut session1, mut session2, _) =
+        let (client, mut session1, _, _) =
             helpers::clients_with_users("friendtestuser1", "friendtestuser2", "friendtestuser3")
                 .await;
         let group = helpers::re_create_group(&client, &mut session1, "DeleteGroup").await;
@@ -177,14 +177,14 @@ fn test_leave_group() {
 #[test]
 fn test_list_group_users() {
     block_on(async {
-        let (client, mut session1, mut session2, mut session3) =
+        let (client, mut session1, mut session2, _) =
             helpers::clients_with_users("friendtestuser1", "friendtestuser2", "friendtestuser3")
                 .await;
         let group = helpers::re_create_group(&client, &mut session1, "ListGroupUsers").await;
         let account2 = client.get_account(&mut session2).await.unwrap();
-        let result = client
+        client
             .add_group_users(&mut session1, &group.id, &[&account2.user.id])
-            .await;
+            .await.expect("Failed to add group users");
 
         let users = client
             .list_group_users(&mut session1, &group.id, None, Some(1), None)
@@ -202,7 +202,7 @@ fn test_list_group_users() {
 #[test]
 fn test_list_groups() {
     block_on(async {
-        let (client, mut session1, mut session2, mut session3) =
+        let (client, mut session1, mut session2, _) =
             helpers::clients_with_users("friendtestuser1", "friendtestuser2", "friendtestuser3")
                 .await;
 
@@ -253,7 +253,7 @@ fn test_list_current_user_groups() {
 #[test]
 fn test_list_user_groups() {
     block_on(async {
-        let (client, mut session1, mut session2, mut session3) =
+        let (client, mut session1, _, _) =
             helpers::clients_with_users("friendtestuser1", "friendtestuser2", "friendtestuser3")
                 .await;
 

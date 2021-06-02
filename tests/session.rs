@@ -1,5 +1,4 @@
 use futures::executor::block_on;
-use nakama_rs::api::ApiAccountDevice;
 use nakama_rs::client::Client;
 use nakama_rs::default_client::DefaultClient;
 use std::collections::HashMap;

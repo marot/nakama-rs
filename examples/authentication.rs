@@ -1,11 +1,7 @@
 use nakama_macro::nakama_main;
 use nakama_rs::client::Client;
-use nakama_rs::default_client::{DefaultClient, DefaultClientError};
-use nakama_rs::http_adapter::RestHttpAdapter;
-use nakama_rs::http_adapter::RestHttpError::HttpError;
-use nakama_rs::session::Session;
+use nakama_rs::default_client::{DefaultClient};
 use std::collections::HashMap;
-use std::io::Error;
 
 #[nakama_main]
 async fn main() {

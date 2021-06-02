@@ -1,21 +1,14 @@
-use futures::executor::block_on;
 use nakama_rs::client::Client;
 use nakama_rs::default_client::DefaultClient;
-use nakama_rs::error::NakamaError;
 use nakama_rs::helper::tick_socket;
-use nakama_rs::socket::{ChannelJoinType, Socket};
+use nakama_rs::socket::Socket;
 use nakama_rs::web_socket::WebSocket;
 
 use nakama_rs::api::{ApiAccount, ApiGroup};
 use nakama_rs::http_adapter::RestHttpAdapter;
 use nakama_rs::session::Session;
 use nakama_rs::web_socket_adapter::WebSocketAdapter;
-use simple_logger::SimpleLogger;
-use std::cell::RefCell;
 use std::collections::HashMap;
-use std::sync::mpsc;
-use std::thread::sleep;
-use std::time::Duration;
 
 pub async fn remove_group_if_exists<C: Client>(
     client: &C,
@@ -26,7 +19,7 @@ pub async fn remove_group_if_exists<C: Client>(
         .list_groups(&mut session, Some(group_name), None, None)
         .await;
     if let Ok(groups) = groups {
-        if (groups.groups.len() > 0) {
+        if groups.groups.len() > 0 {
             client
                 .delete_group(&mut session, &groups.groups[0].id)
                 .await

@@ -1,4 +1,4 @@
-use crate::api::{ApiChannelMessage, ApiNotification, ApiNotificationList, ApiRpc, ApiUser};
+use crate::api::{ApiChannelMessage, ApiNotification, ApiNotificationList, ApiRpc};
 use crate::session::Session;
 use async_trait::async_trait;
 use nanoserde::{DeJson, DeJsonErr, DeJsonState, SerJson};
@@ -599,7 +599,7 @@ pub trait Socket {
 
     async fn close_party(&self, party_id: &str) -> Result<(), Self::Error>;
 
-    async fn close(&self);
+    async fn close(&self) -> Result<(), Self::Error>;
 
     async fn connect(&self, session: &mut Session, appear_online: bool, connect_timeout: i32);
 
@@ -631,9 +631,9 @@ pub trait Socket {
         metadata: HashMap<String, String>,
     ) -> Result<Match, Self::Error>;
 
-    async fn leave_chat(&self, channel_id: &str);
+    async fn leave_chat(&self, channel_id: &str) -> Result<(), Self::Error>;
 
-    async fn leave_match(&self, match_id: &str);
+    async fn leave_match(&self, match_id: &str) -> Result<(), Self::Error>;
 
     async fn leave_party(&self, party_id: &str) -> Result<(), Self::Error>;
 
@@ -654,9 +654,9 @@ pub trait Socket {
         message_id: &str,
     ) -> Result<ChannelMessageAck, Self::Error>;
 
-    async fn remove_matchmaker(&self, ticket: &str);
+    async fn remove_matchmaker(&self, ticket: &str) -> Result<(), Self::Error>;
 
-    async fn remove_matchmaker_party(&self, party_id: &str, ticket: &str);
+    async fn remove_matchmaker_party(&self, party_id: &str, ticket: &str) -> Result<(), Self::Error>;
 
     async fn remove_party_member(
         &self,
@@ -674,11 +674,11 @@ pub trait Socket {
         op_code: i64,
         state: &[u8],
         presences: &[UserPresence],
-    );
+    ) -> Result<(), Self::Error>;
 
-    async fn send_party_data(&self, party_id: &str, op_code: i64, data: &[u8]);
+    async fn send_party_data(&self, party_id: &str, op_code: i64, data: &[u8]) -> Result<(), Self::Error>;
 
-    async fn unfollow_users(&self, user_ids: &[&str]);
+    async fn unfollow_users(&self, user_ids: &[&str]) -> Result<(), Self::Error>;
 
     async fn update_chat_message(
         &self,
@@ -687,7 +687,7 @@ pub trait Socket {
         content: &str,
     ) -> Result<ChannelMessageAck, Self::Error>;
 
-    async fn update_status(&self, status: &str);
+    async fn update_status(&self, status: &str) -> Result<(), Self::Error>;
 
     async fn write_chat_message(
         &self,

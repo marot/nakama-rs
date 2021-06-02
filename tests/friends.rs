@@ -27,7 +27,7 @@ fn test_add_friend_id() {
 #[test]
 fn test_list_friend() {
     block_on(async {
-        let (client, mut session1, mut session2, _) = helpers::clients_with_users("friendtestuser1", "friendtestuser2", "friendtestuser3").await;
+        let (client, mut session1, _, _) = helpers::clients_with_users("friendtestuser1", "friendtestuser2", "friendtestuser3").await;
         client.add_friends(&mut session1, &[], &["friendtestuser2", "friendtestuser3"]).await.unwrap();
         let friends = client.list_friends(&mut session1, None, Some(1), None).await.unwrap();
         println!("{:?}", friends);

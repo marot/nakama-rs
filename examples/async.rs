@@ -38,7 +38,7 @@ fn spawn_network_thread() -> (
                     trace!("Waiting for future");
                     block_on(future);
                     trace!("Future received!");
-                    tx_response.send(());
+                    tx_response.send(()).expect("Failed to send");
                 }
                 Err(_) => {}
             }
@@ -131,20 +131,20 @@ fn main() {
         let web_socket = web_socket.clone();
         let web_socket2 = web_socket2.clone();
         async move {
-            web_socket.join_chat("MyRoom", 1, false, false).await;
+            web_socket.join_chat("MyRoom", 1, false, false).await.expect("Failed to join chat");
             let channel = web_socket2
                 .join_chat("MyRoom", 1, false, false)
                 .await
                 .unwrap();
             web_socket2
                 .write_chat_message(&channel.id, "{\"text\":\"Hello World!\"}")
-                .await;
+                .await.expect("Failed to write chat message");
         }
     });
 
-    send_futures.send(do_some_chatting);
-    rx_response.recv();
+    send_futures.send(do_some_chatting).expect("Failed to send future");
+    rx_response.recv().expect("Failed to receive future response");
 
-    kill_tick.send(());
-    kill_network_thread.send(());
+    kill_tick.send(()).expect("Failed to send kill");
+    kill_network_thread.send(()).expect("Failed to send kill");
 }

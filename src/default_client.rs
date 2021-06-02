@@ -1,6 +1,6 @@
 use crate::api;
 use crate::api::{
-    delete_friends, ApiAccount, ApiAccountApple, ApiAccountCustom, ApiAccountDevice,
+    ApiAccount, ApiAccountApple, ApiAccountCustom, ApiAccountDevice,
     ApiAccountEmail, ApiAccountFacebook, ApiAccountGameCenter, ApiAccountGoogle, ApiAccountSteam,
     ApiChannelMessageList, ApiCreateGroupRequest, ApiDeleteStorageObjectId,
     ApiDeleteStorageObjectsRequest, ApiEvent, ApiFriendList, ApiGroup, ApiGroupList,
@@ -31,9 +31,9 @@ pub struct DefaultClient<A: ClientAdapter> {
 
 #[derive(DeJson)]
 pub struct ClientError {
-    error: String,
-    code: i32,
-    message: String,
+    pub error: String,
+    pub code: i32,
+    pub message: String,
 }
 
 impl DefaultClient<RestHttpAdapter> {
@@ -913,10 +913,10 @@ impl<A: ClientAdapter + Sync + Send> Client for DefaultClient<A> {
 
     async fn list_current_user_groups(
         &self,
-        session: &mut Session,
-        state: Option<i32>,
-        limit: Option<i32>,
-        cursor: Option<&str>,
+        _session: &mut Session,
+        _state: Option<i32>,
+        _limit: Option<i32>,
+        _cursor: Option<&str>,
     ) -> Result<ApiUserGroupList, Self::Error> {
         todo!()
     }

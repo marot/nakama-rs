@@ -1,13 +1,7 @@
 use std::collections::HashMap;
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::mpsc::{channel, Sender};
-use std::sync::Arc;
-use std::task::{RawWaker, Waker};
 use std::thread::sleep;
 use std::time::Duration;
 
-use futures::executor::block_on;
 use log::LevelFilter;
 use simple_logger::SimpleLogger;
 
@@ -49,7 +43,7 @@ fn main() {
     let web_socket = WebSocket::new(adapter);
     let web_socket2 = WebSocket::new(adapter2);
 
-    let mut state = RefCell::new(Connecting);
+    let state = RefCell::new(Connecting);
 
     let network_future = {
         async {
@@ -71,7 +65,7 @@ fn main() {
                         state.replace(Connected);
                     }
                     JoiningChat => {
-                        web_socket.join_chat("MyRoom", 1, false, false).await;
+                        web_socket.join_chat("MyRoom", 1, false, false).await.expect("Failed to join chat");
                         channel = Some(
                             web_socket2
                                 .join_chat("MyRoom", 1, false, false)
@@ -86,7 +80,7 @@ fn main() {
                                 &channel.take().unwrap().id,
                                 "{\"text\":\"Hello World!\"}",
                             )
-                            .await;
+                            .await.expect("Failed to write chat message");
                         state.replace(SentMessage);
                     }
                     _ => {
